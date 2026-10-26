@@ -1,0 +1,6 @@
+{
+  "name": "PLANET-X 2026 — SVKM's NMIMS Global University, Dhule",
+  "description": "Official full-stack event platform for PLANET-X 2026. Explore Code-Zone, Fun-Zone, and Fin-Tech competitions with interactive 3D, team registrations, payment verification, and admin dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

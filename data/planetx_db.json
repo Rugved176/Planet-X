@@ -1,0 +1,561 @@
+{
+  "settings": {
+    "eventName": "PLANET-X 2026",
+    "institution": "SVKM's NMIMS Global University, Dhule",
+    "eventDate": "2026-11-21",
+    "isProvisionalDate": true,
+    "venue": "SVKM's NMIMS Global University Campus, Dhule, Maharashtra",
+    "prizePool": "₹50,000",
+    "tagline": "BEYOND INNOVATION. BEYOND LIMITS.",
+    "supportingTagline": "THINK. CODE. CREATE. COMPETE.",
+    "organizerNotificationEmail": "organizers.planetx@nmims.edu",
+    "upiId": "nmimsdhule@upi",
+    "paymentQrCodeUrl": "",
+    "paymentInstructions": "Scan the official event QR code using any UPI app (GPay / PhonePe / Paytm / BHIM) or transfer to the UPI ID. Upload the payment receipt/screenshot containing the UTR / Transaction ID below.",
+    "contactEmail": "contact.planetx@nmims.edu",
+    "contactPhone": "+91 (02562) 283838"
+  },
+  "users": [
+    {
+      "id": "usr-admin-primary",
+      "email": "admin@planetx.nmims.edu",
+      "passwordHash": "$2b$10$qg4ykI6Axaw1dDoz/lX3N.BZYRuPNRTE4NW0CcgolvJw3rHWWUW4C",
+      "name": "PLANET-X Administrator",
+      "phone": "+91 9876543210",
+      "college": "SVKM's NMIMS Global University, Dhule",
+      "role": "admin",
+      "emailVerified": true,
+      "createdAt": "2026-10-26T14:49:47.067Z"
+    },
+    {
+      "id": "usr-demo-participant",
+      "email": "participant@example.com",
+      "passwordHash": "$2b$10$suGW4Z/rYSi.6CezPtUnhOpPTgQ1s4Meok.6NJYGCisCIws74vy/K",
+      "name": "Aarav Sharma",
+      "phone": "+91 9823456780",
+      "college": "SVKM's NMIMS Dhule",
+      "role": "participant",
+      "emailVerified": true,
+      "createdAt": "2026-10-26T14:49:47.182Z"
+    }
+  ],
+  "zones": [
+    {
+      "id": "zone-a",
+      "code": "ZONE A",
+      "name": "CODE-ZONE",
+      "tagline": "Architect the Future with Pure Engineering & Code",
+      "description": "Push your coding boundaries across modern web engineering, cutting-edge Gemini AI app creation, and rigorous codebase debugging.",
+      "eventIds": [
+        "webathon",
+        "vibeathon",
+        "bugverse"
+      ]
+    },
+    {
+      "id": "zone-b",
+      "code": "ZONE B",
+      "name": "FUN-ZONE",
+      "tagline": "Where Wit, Tactical Mindset & Reflexes Collide",
+      "description": "High-octane excitement spanning the frontiers of AI trends, sharp rhetorical debate, and intense competitive multiplayer gaming.",
+      "eventIds": [
+        "ai-quiz",
+        "debate-competition",
+        "gaming-competition"
+      ]
+    },
+    {
+      "id": "zone-c",
+      "code": "ZONE C",
+      "name": "FIN-TECH",
+      "tagline": "Disrupt Financial Ecosystems & Pitch the Next Unicorn",
+      "description": "Unleash visionary startup concepts, pitch to industry leaders, and master market valuation and quantitative financial problem-solving.",
+      "eventIds": [
+        "startup-pitching",
+        "fin-quiz-analysis"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "webathon",
+      "slug": "webathon",
+      "zoneId": "zone-a",
+      "zoneName": "CODE-ZONE",
+      "name": "WEBATHON",
+      "shortDescription": "Build next-generation web platforms solving real-world challenges.",
+      "fullDescription": "Participants design, build, and deploy high-performance web applications under time pressure. Projects are judged on functionality, visual aesthetic, UX responsiveness, clean architecture, and technical innovation.",
+      "objectives": [
+        "Architect a full-stack or frontend web application within the competition timeframe",
+        "Demonstrate responsive UI design and robust state management",
+        "Deploy the working application to a live staging environment"
+      ],
+      "eligibility": "Open to all undergraduate and postgraduate college students with valid student IDs.",
+      "rules": [
+        "Teams must build their projects during the designated event period.",
+        "Open-source libraries and frameworks (React, Vue, Svelte, Tailwind, etc.) are allowed.",
+        "Plagiarism or using pre-built full applications results in immediate disqualification.",
+        "Final submission must include a live URL and code repository link."
+      ],
+      "judgingCriteria": [
+        "Technical Architecture & Code Quality (30%)",
+        "Visual Design & User Experience (25%)",
+        "Innovation & Originality (25%)",
+        "Presentation & Live Demo (20%)"
+      ],
+      "allowedTech": [
+        "HTML5",
+        "CSS3",
+        "JavaScript",
+        "TypeScript",
+        "React",
+        "Next.js",
+        "Vue",
+        "Tailwind CSS",
+        "Node.js"
+      ],
+      "minTeamSize": 1,
+      "maxTeamSize": 4,
+      "registrationFee": 200,
+      "registrationDeadline": "2026-11-15T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_submission",
+      "customFields": [
+        {
+          "id": "preferredStack",
+          "label": "Primary Tech Stack / Framework",
+          "placeholder": "e.g. React, Next.js, Node.js",
+          "required": true
+        },
+        {
+          "id": "repoUrl",
+          "label": "GitHub Profile or Org URL",
+          "placeholder": "https://github.com/...",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "vibeathon",
+      "slug": "vibeathon",
+      "zoneId": "zone-a",
+      "zoneName": "CODE-ZONE",
+      "name": "VIBEATHON",
+      "shortDescription": "Participants build an application powered by Google Gemini AI.",
+      "fullDescription": "Vibeathon challenges builders to push the envelope of multimodal generative AI. Build intelligent agents, reasoning engines, creative spatial tools, or conversational workflows powered by Google Gemini.",
+      "objectives": [
+        "Implement real integration with the Google Gemini API",
+        "Leverage multimodal capabilities (text, vision, audio, reasoning)",
+        "Deliver an intuitive user workflow solving a tangible domain problem"
+      ],
+      "eligibility": "College students passionate about artificial intelligence, prompt engineering, and app development.",
+      "rules": [
+        "Applications must utilize the Google Gemini API for core AI functionalities.",
+        "Solutions must handle prompt edge cases and demonstrate sensible guardrails.",
+        "Demonstrations must run live during the final judging round."
+      ],
+      "judgingCriteria": [
+        "Gemini API Integration & Prompt Depth (35%)",
+        "Utility & Practical Impact (25%)",
+        "Interface Flow & Polish (20%)",
+        "Live Execution & Robustness (20%)"
+      ],
+      "allowedTech": [
+        "Google Gemini API",
+        "Python",
+        "Node.js",
+        "React",
+        "FastAPI",
+        "Flutter"
+      ],
+      "minTeamSize": 1,
+      "maxTeamSize": 4,
+      "registrationFee": 250,
+      "registrationDeadline": "2026-11-15T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_confirmation",
+      "customFields": [
+        {
+          "id": "projectIdea",
+          "label": "Brief Gemini Project Concept",
+          "placeholder": "Describe what your Gemini application will accomplish",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "bugverse",
+      "slug": "bugverse",
+      "zoneId": "zone-a",
+      "zoneName": "CODE-ZONE",
+      "name": "BUGVERSE",
+      "shortDescription": "Identify, debug, and fix complex errors across modern codebases.",
+      "fullDescription": "A multi-round speed and precision debugging arena. Participants navigate obfuscated repositories, patch memory leaks, solve concurrency deadlocks, and resolve security vulnerabilities.",
+      "objectives": [
+        "Quickly diagnose faulty logic and architectural bottlenecks",
+        "Refactor broken modules without breaking existing unit tests",
+        "Optimize runtime performance and algorithmic efficiency"
+      ],
+      "eligibility": "All registered students with proficiency in C++, Python, Java, or JavaScript.",
+      "rules": [
+        "Participants receive sandboxed repositories with failing test suites.",
+        "Points are awarded based on speed of resolution and test pass rate.",
+        "Automated plagiarism detection is enforced."
+      ],
+      "judgingCriteria": [
+        "Test Pass Percentage (50%)",
+        "Time to Solution Submission (30%)",
+        "Code Cleanliness & Elegance (20%)"
+      ],
+      "allowedTech": [
+        "C++",
+        "Python",
+        "Java",
+        "JavaScript/TypeScript"
+      ],
+      "minTeamSize": 1,
+      "maxTeamSize": 2,
+      "registrationFee": 150,
+      "registrationDeadline": "2026-11-16T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_submission",
+      "customFields": [
+        {
+          "id": "preferredLang",
+          "label": "Preferred Debugging Language",
+          "placeholder": "e.g. Python, C++, Java",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "ai-quiz",
+      "slug": "ai-quiz",
+      "zoneId": "zone-b",
+      "zoneName": "FUN-ZONE",
+      "name": "AI QUIZ",
+      "shortDescription": "Fast-paced quiz on the latest AI trends, architectures, and history.",
+      "fullDescription": "Test your grasp of foundational machine learning, LLM evolution, Transformer mechanics, autonomous systems, and modern AI industry breakthroughs in a buzzer-style quiz format.",
+      "objectives": [
+        "Demonstrate broad and deep knowledge of modern AI/ML trends",
+        "Compete under high-speed round-based time limits",
+        "Navigate rapid-fire trivia and technical reasoning questions"
+      ],
+      "eligibility": "Open to all students with an appetite for AI breakthroughs.",
+      "rules": [
+        "Multiple rounds: Preliminary written screening followed by buzzer-based stage finals.",
+        "Electronic devices are strictly prohibited during the quiz rounds.",
+        "Quizmaster decisions are final and binding."
+      ],
+      "judgingCriteria": [
+        "Accuracy of Responses",
+        "Speed on Buzzer Rounds",
+        "Bonus Round Strategic Scoring"
+      ],
+      "minTeamSize": 1,
+      "maxTeamSize": 2,
+      "registrationFee": 100,
+      "registrationDeadline": "2026-11-17T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_submission"
+    },
+    {
+      "id": "debate-competition",
+      "slug": "debate-competition",
+      "zoneId": "zone-b",
+      "zoneName": "FUN-ZONE",
+      "name": "DEBATE COMPETITION",
+      "shortDescription": "Present, defend, and critique arguments on contemporary tech topics.",
+      "fullDescription": "A premier intellectual debate tournament. Teams spar over artificial intelligence ethics, technological monopolies, quantum computing frontiers, and digital privacy policies.",
+      "objectives": [
+        "Articulate rigorous logical arguments on contested technology topics",
+        "Rebut opposition arguments with factual precision and poise",
+        "Engage judges with compelling rhetoric and persuasive delivery"
+      ],
+      "eligibility": "Open to all collegiate debaters and tech enthusiasts.",
+      "rules": [
+        "Parliamentary or Oxford-style debate format depending on the round.",
+        "Topic assigned 30 minutes prior to match; both affirmative and negative sides must be prepared.",
+        "Strict adherence to speaker time limits."
+      ],
+      "judgingCriteria": [
+        "Logical Substance & Evidence (35%)",
+        "Rebuttal & Cross-Examination (30%)",
+        "Diction, Poise & Rhetorical Delivery (20%)",
+        "Time Management & Structure (15%)"
+      ],
+      "minTeamSize": 2,
+      "maxTeamSize": 2,
+      "registrationFee": 150,
+      "registrationDeadline": "2026-11-16T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_submission"
+    },
+    {
+      "id": "gaming-competition",
+      "slug": "gaming-competition",
+      "zoneId": "zone-b",
+      "zoneName": "FUN-ZONE",
+      "name": "GAMING COMPETITION",
+      "shortDescription": "Competitive esports showdown across high-octane multiplayer titles.",
+      "fullDescription": "Assemble your squad for the ultimate esports arena. Compete in intense bracket-style elimination matches showcasing tactical coordination, lightning reflexes, and strategic synergy.",
+      "objectives": [
+        "Compete in sanctioned esports tournament brackets",
+        "Demonstrate squad communication and clutch mechanical gameplay",
+        "Climb double-elimination brackets to championship victory"
+      ],
+      "eligibility": "All college gaming squads with active player handles.",
+      "rules": [
+        "Standard competitive tournament rules and fair-play anti-cheat enforcement.",
+        "Participants must bring their own peripherals if specified.",
+        "Unsportsmanlike conduct leads to instant forfeit."
+      ],
+      "judgingCriteria": [
+        "Tournament Bracket Progression",
+        "Round Differential & Match Wins"
+      ],
+      "minTeamSize": 1,
+      "maxTeamSize": 4,
+      "registrationFee": 200,
+      "registrationDeadline": "2026-11-17T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_confirmation",
+      "customFields": [
+        {
+          "id": "inGameHandles",
+          "label": "Player Gamer Tags / Handles",
+          "placeholder": "e.g. Leader#1234, Member#5678",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "startup-pitching",
+      "slug": "startup-pitching",
+      "zoneId": "zone-c",
+      "zoneName": "FIN-TECH",
+      "name": "STARTUP IDEA PITCHING",
+      "shortDescription": "Pitch groundbreaking business solutions to founders and investors.",
+      "fullDescription": "The flagship entrepreneurship event of PLANET-X 2026. Pitch your disruptive product, market strategy, unit economics, and growth roadmap to an esteemed panel of venture capitalists and startup leaders.",
+      "objectives": [
+        "Synthesize an innovative startup concept solving a verified market gap",
+        "Present a crisp 5-minute pitch deck followed by a 3-minute jury Q&A",
+        "Defend market viability, competitive moat, and revenue model"
+      ],
+      "eligibility": "Student innovators, aspiring founders, and entrepreneurial teams.",
+      "rules": [
+        "Pitch deck must be submitted 24 hours prior to the live pitching session.",
+        "Strict 5-minute pitch timer followed by 3-minute jury defense.",
+        "Prototypes or MVPs earn bonus evaluation credit."
+      ],
+      "judgingCriteria": [
+        "Problem Significance & Market Opportunity (30%)",
+        "Business Model & Financial Viability (25%)",
+        "Product Innovation & Moat (25%)",
+        "Pitch Clarity & Team Capability (20%)"
+      ],
+      "minTeamSize": 1,
+      "maxTeamSize": 4,
+      "registrationFee": 300,
+      "registrationDeadline": "2026-11-15T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_submission",
+      "customFields": [
+        {
+          "id": "startupName",
+          "label": "Startup or Project Name",
+          "placeholder": "e.g. NovaPay",
+          "required": true
+        },
+        {
+          "id": "deckLink",
+          "label": "Pitch Deck Link (Drive / Docsend)",
+          "placeholder": "https://...",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "fin-quiz-analysis",
+      "slug": "fin-quiz-analysis",
+      "zoneId": "zone-c",
+      "zoneName": "FIN-TECH",
+      "name": "FINANCIAL QUIZ & ANALYSIS",
+      "shortDescription": "Master quantitative financial models, valuation, and capital markets.",
+      "fullDescription": "A two-stage finance showdown combining a fast-paced capital markets quiz with an analytical case study. Evaluate balance sheets, calculate DCF valuations, and recommend actionable investment strategies.",
+      "objectives": [
+        "Exhibit acumen in macroeconomics, equity markets, and corporate finance",
+        "Analyze financial statements and identify key valuation drivers",
+        "Deliver an investment thesis backed by financial modeling"
+      ],
+      "eligibility": "Students interested in finance, commerce, economics, and analytics.",
+      "rules": [
+        "Round 1: Rapid-fire screening quiz on financial markets and instruments.",
+        "Round 2: Comprehensive financial case analysis with spreadsheet submission.",
+        "Standard financial calculator allowed."
+      ],
+      "judgingCriteria": [
+        "Quiz Score & Speed (40%)",
+        "Analytical Depth & Valuation Rigor (40%)",
+        "Recommendation Coherence (20%)"
+      ],
+      "minTeamSize": 1,
+      "maxTeamSize": 3,
+      "registrationFee": 150,
+      "registrationDeadline": "2026-11-16T23:59:59",
+      "isOpen": true,
+      "whatsappGroupLink": "",
+      "whatsappVisibility": "after_submission"
+    }
+  ],
+  "registrations": [
+    {
+      "id": "PX26-WEB-7757",
+      "userId": "usr-demo-participant",
+      "eventId": "webathon",
+      "zoneId": "zone-a",
+      "eventName": "WEBATHON",
+      "teamName": "CosmicCoders",
+      "teamLeaderName": "Aarav Sharma",
+      "teamLeaderEmail": "participant@example.com",
+      "teamLeaderPhone": "+91 9823456780",
+      "college": "SVKM NMIMS Dhule",
+      "teamMembers": [
+        {
+          "name": "Rohan Mehta",
+          "email": "rohan@example.com",
+          "phone": "+91 9823456781",
+          "college": "SVKM NMIMS Dhule",
+          "role": "Member"
+        }
+      ],
+      "additionalInfo": {
+        "preferredStack": "React + Tailwind"
+      },
+      "registrationFee": 200,
+      "paymentStatus": "verified",
+      "registrationStatus": "confirmed",
+      "submittedAt": "2026-10-26T14:50:08.326Z",
+      "paymentProofUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "paymentProofFileName": "receipt_screen.png",
+      "paymentReference": "UPI-UTR-987654321012",
+      "paymentProofUploadedAt": "2026-10-26T14:50:20.969Z",
+      "verifiedAt": "2026-10-26T14:50:34.251Z"
+    }
+  ],
+  "teamMembers": [
+    {
+      "id": "team-rugved",
+      "name": "Rugved",
+      "role": "Lead Organizer & Technical Director",
+      "bio": "Oversees overall event operations, competition architecture, and system reliability for PLANET-X 2026.",
+      "photoUrl": "",
+      "socialLink": "https://linkedin.com",
+      "displayOrder": 1
+    },
+    {
+      "id": "team-ved",
+      "name": "Ved",
+      "role": "Lead Coordinator & Platform Engineering",
+      "bio": "Spearheading participant portals, digital platform architecture, and competition infrastructure.",
+      "photoUrl": "",
+      "socialLink": "https://linkedin.com",
+      "displayOrder": 2
+    },
+    {
+      "id": "team-dakshal",
+      "name": "Dakshal",
+      "role": "Operations & Event Logistics Lead",
+      "bio": "Coordinates on-ground scheduling, venue arrangements, and competition zone execution at NMIMS Dhule.",
+      "photoUrl": "",
+      "socialLink": "https://linkedin.com",
+      "displayOrder": 3
+    },
+    {
+      "id": "team-harsh",
+      "name": "Harsh",
+      "role": "Public Relations & Participant Outreach",
+      "bio": "Drives inter-college delegations, community communications, and participant support desks.",
+      "photoUrl": "",
+      "socialLink": "https://linkedin.com",
+      "displayOrder": 4
+    },
+    {
+      "id": "team-herambh",
+      "name": "Herambh",
+      "role": "Competitions & Judging Coordinator",
+      "bio": "Facilitates problem statements, rubric standardization, and technical jury management.",
+      "photoUrl": "",
+      "socialLink": "https://linkedin.com",
+      "displayOrder": 5
+    },
+    {
+      "id": "team-yash",
+      "name": "Yash",
+      "role": "Sponsorships, Finance & Brand Experience",
+      "bio": "Manages prize pool allocation, partnership engagements, and the futuristic visual brand identity.",
+      "photoUrl": "",
+      "socialLink": "https://linkedin.com",
+      "displayOrder": 6
+    }
+  ],
+  "emailLogs": [
+    {
+      "id": "email-1793026234253-v0akr",
+      "to": "participant@example.com",
+      "subject": "[CONFIRMED] Delegation Pass: PX26-WEB-7757 - WEBATHON at PLANET-X 2026",
+      "type": "registration_confirmed",
+      "sentAt": "2026-10-26T14:50:34.253Z",
+      "status": "accepted",
+      "previewText": "Registration PX26-WEB-7757 for WEBATHON is confirmed! Check venue and team details.",
+      "htmlBody": "\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Registration Confirmed — PX26-WEB-7757</title>\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #050713; color: #e2e8f0; margin: 0; padding: 24px; }\n    .container { max-width: 600px; margin: 0 auto; background-color: #0b1126; border: 1px solid #1e294f; border-radius: 12px; overflow: hidden; }\n    .header { background: linear-gradient(135deg, #0b1126 0%, #172554 100%); padding: 32px 28px; border-bottom: 1px solid #1e294f; text-align: center; }\n    .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; }\n    .brand-title { font-size: 26px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 0.05em; }\n    .brand-sub { font-size: 13px; color: #94a3b8; margin: 0; }\n    .body-content { padding: 32px 28px; line-height: 1.6; font-size: 14px; }\n    .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }\n    .badge-info { background-color: #0369a1; color: #e0f2fe; }\n    .badge-success { background-color: #065f46; color: #d1fae5; }\n    .badge-warning { background-color: #854d0e; color: #fef9c3; }\n    .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #070c1d; border-radius: 8px; overflow: hidden; }\n    .data-table td { padding: 12px 16px; border-bottom: 1px solid #151f3d; font-size: 13px; }\n    .data-table tr:last-child td { border-bottom: none; }\n    .label-col { color: #94a3b8; font-weight: 500; width: 38%; }\n    .val-col { color: #f8fafc; font-weight: 600; }\n    .roster-list { margin: 8px 0; padding-left: 20px; color: #cbd5e1; }\n    .footer { padding: 24px 28px; background-color: #050814; border-top: 1px solid #151f3d; font-size: 11px; color: #64748b; text-align: center; }\n    .btn { display: inline-block; background-color: #0284c7; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 13px; padding: 12px 24px; border-radius: 8px; margin-top: 16px; text-align: center; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <div class=\"kicker\">SVKM's NMIMS Global University, Dhule</div>\n      <h1 class=\"brand-title\">PLANET-X 2026</h1>\n      <p class=\"brand-sub\">Official Delegation Pass & Event Briefing</p>\n    </div>\n    <div class=\"body-content\">\n      \n      <h2 style=\"color: #ffffff; margin-top: 0; font-size: 18px;\">Congratulations Aarav Sharma!</h2>\n      <p>Your team <strong>CosmicCoders</strong> has been officially confirmed for <strong>WEBATHON</strong> at PLANET-X 2026!</p>\n      \n      <div style=\"background-color: #064e3b; border: 1px solid #059669; padding: 16px 20px; border-radius: 8px; margin: 20px 0;\">\n        <p style=\"margin: 0; font-size: 15px; color: #a7f3d0; font-weight: 700;\">\n          &starf; STATUS: CONFIRMED DELEGATION\n        </p>\n        <p style=\"margin: 6px 0 0 0; font-size: 13px; color: #d1fae5;\">\n          Keep this email and your Registration ID handy for desk check-in on event day.\n        </p>\n      </div>\n\n      <table class=\"data-table\">\n        <tr>\n          <td class=\"label-col\">Registration ID</td>\n          <td class=\"val-col\"><span style=\"color: #38bdf8; font-family: monospace; font-size: 15px;\">PX26-WEB-7757</span></td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Event Date</td>\n          <td class=\"val-col\">2026-11-21 (Provisional)</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Venue</td>\n          <td class=\"val-col\">SVKM's NMIMS Global University Campus, Dhule, Maharashtra</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Competition</td>\n          <td class=\"val-col\">WEBATHON (ZONE-A)</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Team Name</td>\n          <td class=\"val-col\">CosmicCoders</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Total Squad</td>\n          <td class=\"val-col\">2 Registered Members</td>\n        </tr>\n      </table>\n\n      \n\n      <p>We look forward to seeing you at SVKM's NMIMS Global University, Dhule. Bring your absolute best!</p>\n    \n    </div>\n    <div class=\"footer\">\n      <p>PLANET-X 2026 &bull; SVKM's NMIMS Global University, Dhule &bull; 21 November 2026 (Provisional)</p>\n      <p>BEYOND INNOVATION. BEYOND LIMITS.</p>\n    </div>\n  </div>\n</body>\n</html>\n  "
+    },
+    {
+      "id": "email-1793026234252-6d4bk",
+      "to": "participant@example.com",
+      "subject": "[PLANET-X 2026] Payment Approved: PX26-WEB-7757",
+      "type": "payment_verified",
+      "sentAt": "2026-10-26T14:50:34.252Z",
+      "status": "accepted",
+      "previewText": "Payment review for registration PX26-WEB-7757 (WEBATHON): Approved.",
+      "htmlBody": "\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Payment Update: PX26-WEB-7757</title>\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #050713; color: #e2e8f0; margin: 0; padding: 24px; }\n    .container { max-width: 600px; margin: 0 auto; background-color: #0b1126; border: 1px solid #1e294f; border-radius: 12px; overflow: hidden; }\n    .header { background: linear-gradient(135deg, #0b1126 0%, #172554 100%); padding: 32px 28px; border-bottom: 1px solid #1e294f; text-align: center; }\n    .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; }\n    .brand-title { font-size: 26px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 0.05em; }\n    .brand-sub { font-size: 13px; color: #94a3b8; margin: 0; }\n    .body-content { padding: 32px 28px; line-height: 1.6; font-size: 14px; }\n    .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }\n    .badge-info { background-color: #0369a1; color: #e0f2fe; }\n    .badge-success { background-color: #065f46; color: #d1fae5; }\n    .badge-warning { background-color: #854d0e; color: #fef9c3; }\n    .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #070c1d; border-radius: 8px; overflow: hidden; }\n    .data-table td { padding: 12px 16px; border-bottom: 1px solid #151f3d; font-size: 13px; }\n    .data-table tr:last-child td { border-bottom: none; }\n    .label-col { color: #94a3b8; font-weight: 500; width: 38%; }\n    .val-col { color: #f8fafc; font-weight: 600; }\n    .roster-list { margin: 8px 0; padding-left: 20px; color: #cbd5e1; }\n    .footer { padding: 24px 28px; background-color: #050814; border-top: 1px solid #151f3d; font-size: 11px; color: #64748b; text-align: center; }\n    .btn { display: inline-block; background-color: #0284c7; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 13px; padding: 12px 24px; border-radius: 8px; margin-top: 16px; text-align: center; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <div class=\"kicker\">SVKM's NMIMS Global University, Dhule</div>\n      <h1 class=\"brand-title\">PLANET-X 2026</h1>\n      <p class=\"brand-sub\">Payment Proof Verified</p>\n    </div>\n    <div class=\"body-content\">\n      \n      <h2 style=\"color: #ffffff; margin-top: 0; font-size: 18px;\">Hello Aarav Sharma,</h2>\n      <p>This is an official update regarding your payment proof for <strong>WEBATHON</strong> (ID: <code>PX26-WEB-7757</code>).</p>\n      \n      \n        <div style=\"background-color: #064e3b; border: 1px solid #059669; padding: 14px 18px; border-radius: 8px; margin: 20px 0;\">\n          <p style=\"margin: 0; font-size: 14px; color: #a7f3d0; font-weight: 600;\">\n            &check; Payment Verification Successful!\n          </p>\n          <p style=\"margin: 6px 0 0 0; font-size: 13px; color: #d1fae5;\">\n            Your transaction has been approved by the organizing committee. Your registration is now officially locked and verified.\n          </p>\n        </div>\n      \n\n      <table class=\"data-table\">\n        <tr>\n          <td class=\"label-col\">Registration ID</td>\n          <td class=\"val-col\"><span style=\"color: #38bdf8; font-family: monospace;\">PX26-WEB-7757</span></td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Competition</td>\n          <td class=\"val-col\">WEBATHON</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Team Name</td>\n          <td class=\"val-col\">CosmicCoders</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Updated Status</td>\n          <td class=\"val-col\"><span class=\"badge badge-success\">VERIFIED</span></td>\n        </tr>\n      </table>\n    \n    </div>\n    <div class=\"footer\">\n      <p>PLANET-X 2026 &bull; SVKM's NMIMS Global University, Dhule &bull; 21 November 2026 (Provisional)</p>\n      <p>BEYOND INNOVATION. BEYOND LIMITS.</p>\n    </div>\n  </div>\n</body>\n</html>\n  "
+    },
+    {
+      "id": "email-1793026208327-rkmci",
+      "to": "organizers.planetx@nmims.edu",
+      "subject": "[ADMIN ALERT] New Registration: WEBATHON - CosmicCoders (PX26-WEB-7757)",
+      "type": "organizer_alert",
+      "sentAt": "2026-10-26T14:50:08.327Z",
+      "status": "accepted",
+      "previewText": "New registration for WEBATHON by CosmicCoders. Total squad: 2.",
+      "htmlBody": "\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>New Registration: PX26-WEB-7757</title>\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #050713; color: #e2e8f0; margin: 0; padding: 24px; }\n    .container { max-width: 600px; margin: 0 auto; background-color: #0b1126; border: 1px solid #1e294f; border-radius: 12px; overflow: hidden; }\n    .header { background: linear-gradient(135deg, #0b1126 0%, #172554 100%); padding: 32px 28px; border-bottom: 1px solid #1e294f; text-align: center; }\n    .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; }\n    .brand-title { font-size: 26px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 0.05em; }\n    .brand-sub { font-size: 13px; color: #94a3b8; margin: 0; }\n    .body-content { padding: 32px 28px; line-height: 1.6; font-size: 14px; }\n    .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }\n    .badge-info { background-color: #0369a1; color: #e0f2fe; }\n    .badge-success { background-color: #065f46; color: #d1fae5; }\n    .badge-warning { background-color: #854d0e; color: #fef9c3; }\n    .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #070c1d; border-radius: 8px; overflow: hidden; }\n    .data-table td { padding: 12px 16px; border-bottom: 1px solid #151f3d; font-size: 13px; }\n    .data-table tr:last-child td { border-bottom: none; }\n    .label-col { color: #94a3b8; font-weight: 500; width: 38%; }\n    .val-col { color: #f8fafc; font-weight: 600; }\n    .roster-list { margin: 8px 0; padding-left: 20px; color: #cbd5e1; }\n    .footer { padding: 24px 28px; background-color: #050814; border-top: 1px solid #151f3d; font-size: 11px; color: #64748b; text-align: center; }\n    .btn { display: inline-block; background-color: #0284c7; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 13px; padding: 12px 24px; border-radius: 8px; margin-top: 16px; text-align: center; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <div class=\"kicker\">SVKM's NMIMS Global University, Dhule</div>\n      <h1 class=\"brand-title\">PLANET-X 2026</h1>\n      <p class=\"brand-sub\">Organizing Committee Operational Alert</p>\n    </div>\n    <div class=\"body-content\">\n      \n      <h2 style=\"color: #ffffff; margin-top: 0; font-size: 18px;\">New Team Registration Logged</h2>\n      <p>A new registration has been submitted for <strong>WEBATHON</strong> (ZONE-A).</p>\n      \n      <table class=\"data-table\">\n        <tr>\n          <td class=\"label-col\">Registration ID</td>\n          <td class=\"val-col\"><span style=\"color: #38bdf8; font-family: monospace;\">PX26-WEB-7757</span></td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Team Name</td>\n          <td class=\"val-col\">CosmicCoders</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Leader Name</td>\n          <td class=\"val-col\">Aarav Sharma</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Leader Email</td>\n          <td class=\"val-col\">participant@example.com</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Leader Phone</td>\n          <td class=\"val-col\">+91 9823456780</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">College / Institute</td>\n          <td class=\"val-col\">SVKM NMIMS Dhule</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Total Squad Size</td>\n          <td class=\"val-col\">2 Members</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Fee Amount</td>\n          <td class=\"val-col\">₹200</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Payment Proof</td>\n          <td class=\"val-col\">Pending Upload</td>\n        </tr>\n      </table>\n\n      <p>Log in to the PLANET-X Admin Dashboard to review payment proofs and update confirmation records.</p>\n    \n    </div>\n    <div class=\"footer\">\n      <p>PLANET-X 2026 &bull; SVKM's NMIMS Global University, Dhule &bull; 21 November 2026 (Provisional)</p>\n      <p>BEYOND INNOVATION. BEYOND LIMITS.</p>\n    </div>\n  </div>\n</body>\n</html>\n  "
+    },
+    {
+      "id": "email-1793026208327-ultct",
+      "to": "participant@example.com",
+      "subject": "[PLANET-X 2026] Registration Received: PX26-WEB-7757 (WEBATHON)",
+      "type": "submission_received",
+      "sentAt": "2026-10-26T14:50:08.327Z",
+      "status": "accepted",
+      "previewText": "Registration PX26-WEB-7757 for WEBATHON received. Payment status: unpaid.",
+      "htmlBody": "\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Registration Received — PX26-WEB-7757</title>\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #050713; color: #e2e8f0; margin: 0; padding: 24px; }\n    .container { max-width: 600px; margin: 0 auto; background-color: #0b1126; border: 1px solid #1e294f; border-radius: 12px; overflow: hidden; }\n    .header { background: linear-gradient(135deg, #0b1126 0%, #172554 100%); padding: 32px 28px; border-bottom: 1px solid #1e294f; text-align: center; }\n    .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; }\n    .brand-title { font-size: 26px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 0.05em; }\n    .brand-sub { font-size: 13px; color: #94a3b8; margin: 0; }\n    .body-content { padding: 32px 28px; line-height: 1.6; font-size: 14px; }\n    .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }\n    .badge-info { background-color: #0369a1; color: #e0f2fe; }\n    .badge-success { background-color: #065f46; color: #d1fae5; }\n    .badge-warning { background-color: #854d0e; color: #fef9c3; }\n    .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #070c1d; border-radius: 8px; overflow: hidden; }\n    .data-table td { padding: 12px 16px; border-bottom: 1px solid #151f3d; font-size: 13px; }\n    .data-table tr:last-child td { border-bottom: none; }\n    .label-col { color: #94a3b8; font-weight: 500; width: 38%; }\n    .val-col { color: #f8fafc; font-weight: 600; }\n    .roster-list { margin: 8px 0; padding-left: 20px; color: #cbd5e1; }\n    .footer { padding: 24px 28px; background-color: #050814; border-top: 1px solid #151f3d; font-size: 11px; color: #64748b; text-align: center; }\n    .btn { display: inline-block; background-color: #0284c7; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 13px; padding: 12px 24px; border-radius: 8px; margin-top: 16px; text-align: center; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <div class=\"kicker\">SVKM's NMIMS Global University, Dhule</div>\n      <h1 class=\"brand-title\">PLANET-X 2026</h1>\n      <p class=\"brand-sub\">Registration Submission Confirmed</p>\n    </div>\n    <div class=\"body-content\">\n      \n      <h2 style=\"color: #ffffff; margin-top: 0; font-size: 18px;\">Hello Aarav Sharma,</h2>\n      <p>Your team registration for <strong>WEBATHON</strong> has been successfully received by the PLANET-X 2026 organizing committee.</p>\n      \n      <table class=\"data-table\">\n        <tr>\n          <td class=\"label-col\">Registration ID</td>\n          <td class=\"val-col\"><span style=\"color: #38bdf8; font-family: monospace;\">PX26-WEB-7757</span></td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Competition</td>\n          <td class=\"val-col\">WEBATHON</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Team Name</td>\n          <td class=\"val-col\">CosmicCoders</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Registration Fee</td>\n          <td class=\"val-col\">₹200</td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Payment Status</td>\n          <td class=\"val-col\"><span class=\"badge badge-warning\">UNPAID</span></td>\n        </tr>\n        <tr>\n          <td class=\"label-col\">Submission Timestamp</td>\n          <td class=\"val-col\">10/26/2026, 2:50:08 PM</td>\n        </tr>\n      </table>\n\n      <h3 style=\"color: #e2e8f0; font-size: 14px; margin-bottom: 6px;\">Team Roster:</h3>\n      <ul class=\"roster-list\">\n        <li><strong>Aarav Sharma</strong> (Leader &bull; participant@example.com)</li>\n        <li><strong>Rohan Mehta</strong> (rohan@example.com &bull; +91 9823456781)</li>\n      </ul>\n\n      <div style=\"background-color: #172554; border: 1px solid #1d4ed8; padding: 14px 18px; border-radius: 8px; margin: 20px 0;\">\n        <p style=\"margin: 0; font-size: 13px; color: #bfdbfe;\">\n          <strong>Important Payment Notice:</strong> Your payment status is currently <em>Pending Verification</em>. Our finance team will review the submitted transaction proof. You can monitor verification progress anytime from your Participant Dashboard.\n        </p>\n      </div>\n\n      <p>Thank you for competing at PLANET-X 2026. Prepare for an unforgettable technological arena.</p>\n    \n    </div>\n    <div class=\"footer\">\n      <p>PLANET-X 2026 &bull; SVKM's NMIMS Global University, Dhule &bull; 21 November 2026 (Provisional)</p>\n      <p>BEYOND INNOVATION. BEYOND LIMITS.</p>\n    </div>\n  </div>\n</body>\n</html>\n  "
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "audit-1793026234251-q6kz",
+      "adminEmail": "admin@planetx.nmims.edu",
+      "action": "APPROVE_PAYMENT",
+      "details": "Registration PX26-WEB-7757 (CosmicCoders - WEBATHON): Approved payment",
+      "timestamp": "2026-10-26T14:50:34.251Z"
+    }
+  ],
+  "contactMessages": []
+}

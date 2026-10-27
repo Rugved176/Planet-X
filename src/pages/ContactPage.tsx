@@ -105,19 +105,45 @@ export const ContactPage: React.FC<ContactPageProps> = ({ settings }) => {
               <div>
                 <span className="text-slate-400 block font-medium">Official Email</span>
                 <a
-                  href={`mailto:${settings.contactEmail}`}
-                  className="font-mono text-cyan-300 hover:underline mt-0.5 block"
+                  href="mailto:planetx.event@gmail.com"
+                  className="font-mono text-cyan-300 hover:text-cyan-200 hover:underline mt-0.5 block text-sm font-semibold"
                 >
-                  {settings.contactEmail}
+                  planetx.event@gmail.com
                 </a>
+                <span className="text-[10px] text-slate-500">Click to open your mail client</span>
               </div>
             </div>
 
             <div className="flex items-start gap-3 text-xs text-slate-300 pt-3 border-t border-slate-800/80">
               <Phone className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-slate-400 block font-medium">Helpdesk Hotline</span>
-                <p className="font-mono text-slate-200 mt-0.5">{settings.contactPhone}</p>
+              <div className="w-full">
+                <span className="text-slate-400 block font-medium mb-1.5">Coordinator Helpdesk Hotlines</span>
+                <div className="space-y-1.5 font-mono text-xs">
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-300 font-sans font-medium text-[11px]">Rugved Solanki</span>
+                    <a href="tel:+919975952579" className="text-cyan-300 hover:underline hover:text-cyan-200 font-bold">
+                      +91 9975952579
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-300 font-sans font-medium text-[11px]">Ved Shinde</span>
+                    <a href="tel:+918262058180" className="text-cyan-300 hover:underline hover:text-cyan-200 font-bold">
+                      +91 8262058180
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-300 font-sans font-medium text-[11px]">Dakshal Ahire</span>
+                    <a href="tel:+918412820178" className="text-cyan-300 hover:underline hover:text-cyan-200 font-bold">
+                      +91 8412820178
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                    <span className="text-slate-300 font-sans font-medium text-[11px]">Yash Khairnar</span>
+                    <a href="tel:+918080156469" className="text-cyan-300 hover:underline hover:text-cyan-200 font-bold">
+                      +91 8080156469
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

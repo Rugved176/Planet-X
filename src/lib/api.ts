@@ -6,7 +6,8 @@ import {
   OrganizingTeamMember, 
   GlobalSettings, 
   EmailLog, 
-  AuditLog 
+  AuditLog,
+  ContactMessage
 } from '../types.ts';
 
 const TOKEN_KEY = 'planetx_auth_token';
@@ -81,6 +82,12 @@ export const api = {
       body: JSON.stringify(data)
     }),
 
+  googleAuth: (data: { uid: string; email: string; name?: string; photoUrl?: string }) =>
+    request<{ user: UserProfile; token: string }>('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
   getMe: () => request<{ user: UserProfile }>('/api/auth/me'),
 
   updateProfile: (data: { name?: string; phone?: string; college?: string }) =>
@@ -106,6 +113,9 @@ export const api = {
     college: string;
     teamMembers: any[];
     additionalInfo?: Record<string, string>;
+    paymentProofBase64?: string;
+    paymentProofFileName?: string;
+    paymentReference?: string;
   }) =>
     request<{ success: boolean; registration: Registration; message: string }>('/api/registrations', {
       method: 'POST',
@@ -181,6 +191,14 @@ export const api = {
   getAdminEmails: () => request<{ emails: EmailLog[] }>('/api/admin/emails'),
 
   getAdminAuditLogs: () => request<{ auditLogs: AuditLog[] }>('/api/admin/audit-logs'),
+
+  getAdminQueries: () => request<{ queries: ContactMessage[] }>('/api/admin/queries'),
+
+  updateQueryStatus: (queryId: string, status: 'unread' | 'replied') =>
+    request<{ success: boolean; queries: ContactMessage[] }>(`/api/admin/queries/${queryId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    }),
 
   getExportCsvUrl: () => `/api/admin/export-csv`
 };

@@ -53,33 +53,24 @@ export const HomePage: React.FC<HomePageProps> = ({
   return (
     <div className="w-full min-h-screen bg-transparent">
       {/* 1. CINEMATIC HERO VIEWPORT WITH THREE.JS PLANET */}
-      <section className="relative w-full overflow-hidden min-h-[580px] md:min-h-[720px] flex items-center justify-center">
+      <section className="relative w-full overflow-hidden min-h-[calc(100vh-5rem)] flex items-center justify-center">
         {/* Neon Nebula Cityscape Hero Background */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none scale-105 transition-transform duration-1000"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none scale-105 transition-transform duration-1000 opacity-60"
           style={{
             backgroundImage: `url('/assets/aistudio/Neon_Nebula_Cityscape_fcfb5c7c.png')`
           }}
         />
 
         {/* Futuristic Cosmic Ambience Layers */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(14,165,233,0.22),rgba(255,255,255,0))] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(139,92,246,0.2),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(14,165,233,0.2),rgba(0,0,0,0))] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(139,92,246,0.18),transparent_50%)] pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_60%,rgba(236,72,153,0.18),transparent_50%)] pointer-events-none" />
         
-        {/* Subtle Cyber Grid lines */}
-        <div 
-          className="absolute inset-0 opacity-[0.08] pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(to right, #38bdf8 1px, transparent 1px), linear-gradient(to bottom, #38bdf8 1px, transparent 1px)`,
-            backgroundSize: '64px 64px'
-          }}
-        />
-        {/* Vignette Gradients for Legibility and Smooth Bottom Blend */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#02040a]/75 via-transparent to-[#02040a] pointer-events-none" />
-        <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+        {/* Vignette Gradients for Legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#02040a]/60 via-transparent to-[#02040a] pointer-events-none" />
 
-        <div className="relative z-10 w-full">
+        <div className="relative z-10 w-full h-full flex items-center justify-center">
           <ThreePlanet
             onExploreZones={() => onNavigate('zones')}
             onEnterPlanetX={() => onNavigate('auth')}
@@ -87,12 +78,12 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {/* Scroll indicator (As seen in Techfest video: SCROLL TO EXPLORE) */}
-        <div className="absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-1.5 opacity-80">
-          <span className="text-[10px] font-mono tracking-[0.25em] text-yellow-400 uppercase font-bold">
+        <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-1.5 opacity-80">
+          <span className="text-[10px] font-mono tracking-[0.25em] text-[#facc15] uppercase font-bold">
             SCROLL TO EXPLORE
           </span>
-          <div className="w-4 h-7 rounded-full border-2 border-yellow-400/60 flex items-start justify-center p-1">
-            <div className="w-1 h-2 rounded-full bg-yellow-400 animate-bounce" />
+          <div className="w-4 h-7 rounded-full border-2 border-[#facc15]/60 flex items-start justify-center p-1">
+            <div className="w-1 h-2 rounded-full bg-[#facc15] animate-bounce" />
           </div>
         </div>
       </section>

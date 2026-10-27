@@ -10,9 +10,23 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function getPort(): number {
+  // Check CLI arguments first (e.g. --port 3000)
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    const p = parseInt(process.argv[portArgIndex + 1], 10);
+    if (!isNaN(p)) return p;
+  }
+  // In development, port must always be 3000 in AI Studio
+  if (process.env.NODE_ENV !== 'production') {
+    return 3000;
+  }
+  return parseInt(process.env.PORT || '3000', 10);
+}
+
 async function startServer() {
   const app = express();
-  const PORT = parseInt(process.env.PORT || '3000', 10);
+  const PORT = getPort();
   const isProd = process.env.NODE_ENV === 'production';
 
   // Seed default administrator & demo participant
@@ -53,8 +67,13 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 PLANET-X 2026 Full-Stack Server active on http://0.0.0.0:${PORT}`);
+  });
+
+  server.on('error', (err: any) => {
+    console.error('Server listen error:', err);
+    process.exit(1);
   });
 }
 

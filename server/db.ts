@@ -85,6 +85,7 @@ export interface OrganizingTeamMember {
   bio: string;
   photoUrl: string;
   socialLink: string;
+  phone?: string;
   displayOrder: number;
 }
 
@@ -163,12 +164,12 @@ export const INITIAL_SETTINGS: GlobalSettings = {
   prizePool: '₹50,000',
   tagline: 'BEYOND INNOVATION. BEYOND LIMITS.',
   supportingTagline: 'THINK. CODE. CREATE. COMPETE.',
-  organizerNotificationEmail: 'organizers.planetx@nmims.edu',
-  upiId: 'nmimsdhule@upi',
-  paymentQrCodeUrl: '', // Admin can upload or placeholder is shown
-  paymentInstructions: 'Scan the official event QR code using any UPI app (GPay / PhonePe / Paytm / BHIM) or transfer to the UPI ID. Upload the payment receipt/screenshot containing the UTR / Transaction ID below.',
-  contactEmail: 'contact.planetx@nmims.edu',
-  contactPhone: '+91 (02562) 283838'
+  organizerNotificationEmail: 'planetx.event@gmail.com',
+  upiId: '9975952579@fam',
+  paymentQrCodeUrl: '/assets/aistudio/image_6399a176.png',
+  paymentInstructions: 'Scan the official event QR code for Rugved Solanki (9975952579@fam) using any UPI app (GPay / PhonePe / Paytm / BHIM) or transfer to the UPI ID. Upload the payment receipt/screenshot containing the UTR / Transaction ID below.',
+  contactEmail: 'planetx.event@gmail.com',
+  contactPhone: '+91 9975952579'
 };
 
 export const INITIAL_ZONES: CompetitionZone[] = [
@@ -484,30 +485,43 @@ export const INITIAL_EVENTS: CompetitionEvent[] = [
 export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
   {
     id: 'team-rugved',
-    name: 'Rugved',
+    name: 'Rugved Solanki',
     role: 'Lead Organizer & Technical Director',
     bio: 'Oversees overall event operations, competition architecture, and system reliability for PLANET-X 2026.',
     photoUrl: '',
     socialLink: 'https://linkedin.com',
+    phone: '+91 9975952579',
     displayOrder: 1
   },
   {
     id: 'team-ved',
-    name: 'Ved',
+    name: 'Ved Shinde',
     role: 'Lead Coordinator & Platform Engineering',
     bio: 'Spearheading participant portals, digital platform architecture, and competition infrastructure.',
     photoUrl: '',
     socialLink: 'https://linkedin.com',
+    phone: '+91 8262058180',
     displayOrder: 2
   },
   {
     id: 'team-dakshal',
-    name: 'Dakshal',
+    name: 'Dakshal Ahire',
     role: 'Operations & Event Logistics Lead',
     bio: 'Coordinates on-ground scheduling, venue arrangements, and competition zone execution at NMIMS Dhule.',
     photoUrl: '',
     socialLink: 'https://linkedin.com',
+    phone: '+91 8412820178',
     displayOrder: 3
+  },
+  {
+    id: 'team-yash',
+    name: 'Yash Khairnar',
+    role: 'Sponsorships, Finance & Brand Experience',
+    bio: 'Manages prize pool allocation, partnership engagements, and the futuristic visual brand identity.',
+    photoUrl: '',
+    socialLink: 'https://linkedin.com',
+    phone: '+91 8080156469',
+    displayOrder: 4
   },
   {
     id: 'team-harsh',
@@ -516,22 +530,13 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
     bio: 'Drives inter-college delegations, community communications, and participant support desks.',
     photoUrl: '',
     socialLink: 'https://linkedin.com',
-    displayOrder: 4
+    displayOrder: 5
   },
   {
     id: 'team-herambh',
     name: 'Herambh',
     role: 'Competitions & Judging Coordinator',
     bio: 'Facilitates problem statements, rubric standardization, and technical jury management.',
-    photoUrl: '',
-    socialLink: 'https://linkedin.com',
-    displayOrder: 5
-  },
-  {
-    id: 'team-yash',
-    name: 'Yash',
-    role: 'Sponsorships, Finance & Brand Experience',
-    bio: 'Manages prize pool allocation, partnership engagements, and the futuristic visual brand identity.',
     photoUrl: '',
     socialLink: 'https://linkedin.com',
     displayOrder: 6

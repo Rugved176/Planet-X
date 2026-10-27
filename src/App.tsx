@@ -35,12 +35,12 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   prizePool: 'INR 50,000',
   tagline: 'BEYOND INNOVATION. BEYOND LIMITS.',
   supportingTagline: 'THINK. CODE. CREATE. COMPETE.',
-  organizerNotificationEmail: 'organizers.planetx@nmims.edu',
-  upiId: 'nmimsdhule@upi',
-  paymentQrCodeUrl: '',
-  paymentInstructions: 'Scan official QR or transfer to UPI ID.',
-  contactEmail: 'contact.planetx@nmims.edu',
-  contactPhone: '+91 (02562) 283838'
+  organizerNotificationEmail: 'planetx.event@gmail.com',
+  upiId: '9975952579@fam',
+  paymentQrCodeUrl: '/assets/aistudio/image_6399a176.png',
+  paymentInstructions: 'Scan official QR code (Rugved Solanki: 9975952579@fam) or pay via UPI. Upload your payment screenshot/slip and enter UTR reference.',
+  contactEmail: 'planetx.event@gmail.com',
+  contactPhone: '+91 9975952579'
 };
 
 function MainApp() {
@@ -176,8 +176,8 @@ function MainApp() {
 
         {currentPage === 'auth' && (
           <AuthPage
-            onSuccess={() => {
-              handleNavigate('dashboard');
+            onSuccess={(target) => {
+              handleNavigate(target || 'dashboard');
             }}
           />
         )}

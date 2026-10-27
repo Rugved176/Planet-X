@@ -31,51 +31,45 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
-// Ensure at least one administrator and one demo user exist
+// Ensure fixed official administrator exists
 export async function seedInitialAdmin(): Promise<void> {
   const db = dbManager.get();
-  const adminExists = db.users.some(u => u.role === 'admin' || u.email === 'admin@planetx.nmims.edu');
+  const svkmHash = await hashPassword('SVKM');
   
-  if (!adminExists) {
-    const adminHash = await hashPassword('Admin@PlanetX2026');
-    const adminUser: UserProfile = {
-      id: 'usr-admin-primary',
-      email: 'admin@planetx.nmims.edu',
-      passwordHash: adminHash,
-      name: 'PLANET-X Administrator',
-      phone: '+91 9876543210',
-      college: "SVKM's NMIMS Global University, Dhule",
-      role: 'admin',
-      emailVerified: true,
-      createdAt: new Date().toISOString()
-    };
+  dbManager.update(d => {
+    // 1. Ensure planetx.event@gmail.com has fixed password SVKM and admin role
+    const primaryAdmin = d.users.find(u => u.email.toLowerCase() === 'planetx.event@gmail.com');
+    if (primaryAdmin) {
+      primaryAdmin.passwordHash = svkmHash;
+      primaryAdmin.role = 'admin';
+      primaryAdmin.name = 'PLANET-X Administrator';
+      primaryAdmin.phone = '+91 9975952579';
+    } else {
+      d.users.push({
+        id: 'usr-admin-planetx',
+        email: 'planetx.event@gmail.com',
+        passwordHash: svkmHash,
+        name: 'PLANET-X Administrator',
+        phone: '+91 9975952579',
+        college: "SVKM's NMIMS Global University, Dhule",
+        role: 'admin',
+        emailVerified: true,
+        createdAt: new Date().toISOString()
+      });
+    }
 
-    dbManager.update(d => {
-      d.users.push(adminUser);
-    });
-    console.log('Admin account initialized: admin@planetx.nmims.edu');
-  }
+    // 2. Also ensure rugvedsolanki6@gmail.com has admin role if present
+    const rugvedUser = d.users.find(u => u.email.toLowerCase() === 'rugvedsolanki6@gmail.com');
+    if (rugvedUser) {
+      rugvedUser.role = 'admin';
+    }
 
-  // Also seed a demo participant if none exists
-  const demoExists = db.users.some(u => u.email === 'participant@example.com');
-  if (!demoExists) {
-    const demoHash = await hashPassword('Participant@2026');
-    const demoUser: UserProfile = {
-      id: 'usr-demo-participant',
-      email: 'participant@example.com',
-      passwordHash: demoHash,
-      name: 'Aarav Sharma',
-      phone: '+91 9823456780',
-      college: "SVKM's NMIMS Dhule",
-      role: 'participant',
-      emailVerified: true,
-      createdAt: new Date().toISOString()
-    };
+    // 3. Remove demo registrations and demo participant
+    d.users = d.users.filter(u => u.email !== 'participant@example.com');
+    d.registrations = d.registrations.filter(r => r.userId !== 'usr-demo-participant' && !r.id.includes('7757'));
+  });
 
-    dbManager.update(d => {
-      d.users.push(demoUser);
-    });
-  }
+  console.log('Fixed Admin account verified: planetx.event@gmail.com (Password: SVKM)');
 }
 
 // Authentication middleware

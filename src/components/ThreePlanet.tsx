@@ -8,60 +8,104 @@ interface ThreePlanetProps {
   onEnterPlanetX?: () => void;
 }
 
-// Helper to generate high-resolution procedural cosmic planet texture (Zero external asset dependencies)
+// Procedural sleek tech circuit texture for the streamlined celestial core
 function createPlanetTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = 2048;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d')!;
 
-  // Deep cosmic background gradient
-  const grad = ctx.createLinearGradient(0, 0, 1024, 512);
-  grad.addColorStop(0, '#040714');
-  grad.addColorStop(0.25, '#091332');
-  grad.addColorStop(0.5, '#0e224e');
-  grad.addColorStop(0.75, '#141738');
-  grad.addColorStop(1, '#050917');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 1024, 512);
+  // Deep obsidian & cosmic nebula gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, 1024);
+  bgGrad.addColorStop(0, '#02040c');
+  bgGrad.addColorStop(0.25, '#050c20');
+  bgGrad.addColorStop(0.5, '#091533');
+  bgGrad.addColorStop(0.75, '#050c20');
+  bgGrad.addColorStop(1, '#020309');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 2048, 1024);
 
-  // Continental landmasses
-  ctx.fillStyle = '#0a2352';
-  for (let i = 0; i < 45; i++) {
-    const cx = Math.random() * 1024;
-    const cy = Math.random() * 512;
-    const r = 30 + Math.random() * 85;
+  // Soft continental tech dark patches
+  ctx.fillStyle = '#071638';
+  for (let i = 0; i < 30; i++) {
+    const cx = Math.random() * 2048;
+    const cy = Math.random() * 1024;
+    const rw = 70 + Math.random() * 140;
+    const rh = 35 + Math.random() * 70;
     ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, rw, rh, Math.random() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Glowing electric cyan fissures / tech grid lines
-  ctx.strokeStyle = '#06b6d4';
-  ctx.lineWidth = 1.8;
-  ctx.globalAlpha = 0.65;
-  for (let i = 0; i < 24; i++) {
-    const y = Math.random() * 512;
+  // Delicate equatorial digital circuit waves
+  const waveCount = 14;
+  for (let w = 0; w < waveCount; w++) {
+    const baseY = 320 + w * 28 + Math.sin(w * 0.9) * 16;
+    const waveFreq = 0.007 + (w % 3) * 0.003;
+    const waveAmp = 22 + (w % 4) * 9;
+
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 12;
+    ctx.strokeStyle = w % 2 === 0 ? '#38bdf8' : '#00e5ff';
+    ctx.lineWidth = w % 3 === 0 ? 2.4 : 1.5;
+    ctx.globalAlpha = 0.88;
+
     ctx.beginPath();
-    ctx.moveTo(0, y);
-    for (let x = 0; x < 1024; x += 50) {
-      ctx.lineTo(x, y + Math.sin(x * 0.035) * 16 + (Math.random() * 6 - 3));
+    ctx.moveTo(0, baseY);
+
+    for (let x = 0; x <= 2048; x += 32) {
+      const rawSin = Math.sin(x * waveFreq) * waveAmp;
+      const stepped = Math.round(rawSin / 6) * 6;
+      const curY = baseY + stepped;
+      ctx.lineTo(x, curY);
+
+      if (x % 160 === 0 && Math.random() > 0.45) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, curY, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.stroke();
   }
 
-  // Glowing energy hubs (violet & magenta)
-  ctx.fillStyle = '#c084fc';
-  ctx.globalAlpha = 0.85;
-  for (let i = 0; i < 50; i++) {
-    const nx = Math.random() * 1024;
-    const ny = Math.random() * 512;
+  // Refined longitudinal coordinate lines
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = '#818cf8';
+  ctx.strokeStyle = '#4338ca';
+  ctx.lineWidth = 0.9;
+  ctx.globalAlpha = 0.45;
+  for (let lon = 0; lon < 2048; lon += 170) {
     ctx.beginPath();
-    ctx.arc(nx, ny, 3, 0, Math.PI * 2);
+    ctx.moveTo(lon, 0);
+    ctx.lineTo(lon, 1024);
+    ctx.stroke();
+  }
+
+  // Subtle latitudinal pulse rings
+  for (let lat = 140; lat < 900; lat += 120) {
+    ctx.beginPath();
+    ctx.moveTo(0, lat);
+    ctx.lineTo(2048, lat);
+    ctx.stroke();
+  }
+
+  // Glowing micro data nodes
+  ctx.shadowBlur = 10;
+  for (let p = 0; p < 90; p++) {
+    const px = Math.random() * 2048;
+    const py = Math.random() * 1024;
+    ctx.shadowColor = p % 2 === 0 ? '#38bdf8' : '#d946ef';
+    ctx.fillStyle = p % 2 === 0 ? '#7dd3fc' : '#f472b6';
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.arc(px, py, 1.8 + Math.random() * 1.6, 0, Math.PI * 2);
     ctx.fill();
   }
 
   ctx.globalAlpha = 1.0;
+  ctx.shadowBlur = 0;
+
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.RepeatWrapping;
@@ -69,125 +113,157 @@ function createPlanetTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-// Procedural orbital ring texture
+// Procedural luminous magenta / purple cosmic energy ring texture
 function createRingTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
+  canvas.width = 1024;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
 
-  const grad = ctx.createLinearGradient(0, 0, 512, 0);
-  grad.addColorStop(0, 'rgba(6, 182, 212, 0)');
-  grad.addColorStop(0.15, 'rgba(6, 182, 212, 0.7)');
-  grad.addColorStop(0.4, 'rgba(139, 92, 246, 0.95)');
-  grad.addColorStop(0.7, 'rgba(236, 72, 153, 0.65)');
-  grad.addColorStop(0.9, 'rgba(56, 189, 248, 0.3)');
-  grad.addColorStop(1, 'rgba(6, 182, 212, 0)');
+  const grad = ctx.createLinearGradient(0, 0, 1024, 0);
+  grad.addColorStop(0, 'rgba(217, 70, 239, 0)');
+  grad.addColorStop(0.1, 'rgba(168, 85, 247, 0.25)');
+  grad.addColorStop(0.24, 'rgba(217, 70, 239, 0.75)');
+  grad.addColorStop(0.48, 'rgba(244, 114, 182, 0.95)');
+  grad.addColorStop(0.65, 'rgba(217, 70, 239, 0.9)');
+  grad.addColorStop(0.82, 'rgba(147, 51, 234, 0.6)');
+  grad.addColorStop(0.94, 'rgba(56, 189, 248, 0.2)');
+  grad.addColorStop(1, 'rgba(217, 70, 239, 0)');
 
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 512, 1);
+  ctx.fillRect(0, 0, 1024, 1);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
-// Inner Planet Component managed inside React Three Fiber
 interface PlanetSceneProps {
   speed: number;
-  showRings: boolean;
 }
 
-const PlanetScene: React.FC<PlanetSceneProps> = ({ speed, showRings }) => {
+const PlanetScene: React.FC<PlanetSceneProps> = ({ speed }) => {
   const planetGroupRef = useRef<THREE.Group>(null);
   const coreRef = useRef<THREE.Mesh>(null);
+  const geodesicRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
-  const cloudsRef = useRef<THREE.Mesh>(null);
+  const secondaryRingRef = useRef<THREE.Mesh>(null);
+  const innerRingRef = useRef<THREE.Mesh>(null);
+  const haloRef = useRef<THREE.Mesh>(null);
   const particlesRef = useRef<THREE.Points>(null);
 
-  // Generate procedural textures once
   const planetTexture = useMemo(() => createPlanetTexture(), []);
   const ringTexture = useMemo(() => createRingTexture(), []);
 
-  // Generate orbital particles
+  // Geodesic wireframe geometry: clean, lightweight icosahedron with fine tessellation
+  const geodesicGeo = useMemo(() => new THREE.IcosahedronGeometry(1.42, 3), []);
+
+  // Fine stardust & cosmic particle distribution
   const [particlePositions, particleColors] = useMemo(() => {
-    const count = 500;
+    const count = 480;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = 1.9 + Math.random() * 0.9;
-      const yOffset = (Math.random() - 0.5) * 0.12;
+      const isOrbitalRing = i < 340;
+      let x = 0;
+      let y = 0;
+      let z = 0;
 
-      // Match ring tilt
-      const tiltedY = yOffset * Math.cos(Math.PI / 2.3) - Math.sin(angle) * radius * Math.sin(0.4);
-      const tiltedZ = Math.sin(angle) * radius * Math.cos(0.4);
+      if (isOrbitalRing) {
+        // Concentrated in the tilted orbital disc
+        const angle = (i / 340) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+        const radius = 1.6 + Math.random() * 1.5;
+        const ySpread = (Math.random() - 0.5) * 0.5;
 
-      positions[i * 3] = Math.cos(angle) * radius;
-      positions[i * 3 + 1] = tiltedY;
-      positions[i * 3 + 2] = tiltedZ;
+        const ringTiltX = 1.32;
+        const rawX = Math.cos(angle) * radius;
+        const rawZ = Math.sin(angle) * radius;
 
-      if (Math.random() > 0.45) {
-        colors[i * 3] = 0.02;     // Cyan R
-        colors[i * 3 + 1] = 0.71; // Cyan G
-        colors[i * 3 + 2] = 0.83; // Cyan B
+        x = rawX;
+        y = -rawZ * Math.sin(ringTiltX) + ySpread;
+        z = rawZ * Math.cos(ringTiltX);
       } else {
-        colors[i * 3] = 0.92;     // Magenta R
-        colors[i * 3 + 1] = 0.28; // Magenta G
-        colors[i * 3 + 2] = 0.6;  // Magenta B
+        // Floating atmospheric stardust envelope
+        const phi = Math.acos(2 * Math.random() - 1);
+        const theta = Math.random() * Math.PI * 2;
+        const r = 1.48 + Math.random() * 0.7;
+
+        x = r * Math.sin(phi) * Math.cos(theta);
+        y = r * Math.sin(phi) * Math.sin(theta);
+        z = r * Math.cos(phi);
+      }
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      const colorPick = Math.random();
+      if (colorPick < 0.45) {
+        // Radiant cyan
+        colors[i * 3] = 0.05;
+        colors[i * 3 + 1] = 0.88;
+        colors[i * 3 + 2] = 0.98;
+      } else if (colorPick < 0.8) {
+        // Vivid fuchsia / magenta
+        colors[i * 3] = 0.92;
+        colors[i * 3 + 1] = 0.32;
+        colors[i * 3 + 2] = 0.92;
+      } else {
+        // Star white / lavender
+        colors[i * 3] = 0.9;
+        colors[i * 3 + 1] = 0.85;
+        colors[i * 3 + 2] = 1.0;
       }
     }
     return [positions, colors];
   }, []);
 
-  // Frame loop for continuous rotation & smooth mouse responsiveness
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
 
-    // Continuous spin
+    // Continuous smooth planetary rotation
     if (coreRef.current) {
-      coreRef.current.rotation.y += dt * 0.28 * speed;
-    }
-    if (cloudsRef.current) {
-      cloudsRef.current.rotation.y += dt * 0.35 * speed;
-    }
-    if (ringRef.current) {
-      ringRef.current.rotation.z -= dt * 0.09 * speed;
-    }
-    if (particlesRef.current) {
-      particlesRef.current.rotation.y += dt * 0.07 * speed;
+      coreRef.current.rotation.y += dt * 0.18 * speed;
     }
 
-    // Mouse responsiveness with frame-rate independent exponential damping
+    // Delicate geodesic wireframe overlay rotates with elegant independent counter-drift
+    if (geodesicRef.current) {
+      geodesicRef.current.rotation.y += dt * 0.08 * speed;
+      geodesicRef.current.rotation.x += dt * 0.03 * speed;
+    }
+
+    // Radiant energy rings rotation
+    if (ringRef.current) {
+      ringRef.current.rotation.z -= dt * 0.045 * speed;
+    }
+    if (secondaryRingRef.current) {
+      secondaryRingRef.current.rotation.z += dt * 0.03 * speed;
+    }
+    if (innerRingRef.current) {
+      innerRingRef.current.rotation.z -= dt * 0.06 * speed;
+    }
+
+    // Orbital dust slow orbit
+    if (particlesRef.current) {
+      particlesRef.current.rotation.y += dt * 0.035 * speed;
+    }
+
+    // Subtle fluid pointer parallax
     if (planetGroupRef.current) {
-      const targetRotY = state.pointer.x * 0.45;
-      const targetRotX = -state.pointer.y * 0.35 + 0.15;
-      const targetPosX = state.pointer.x * 0.25;
-      const targetPosY = state.pointer.y * 0.15;
+      const targetRotY = state.pointer.x * 0.22;
+      const targetRotX = -state.pointer.y * 0.15 + 0.04;
 
       planetGroupRef.current.rotation.y = THREE.MathUtils.damp(
         planetGroupRef.current.rotation.y,
         targetRotY,
-        3.5,
+        3.0,
         dt
       );
       planetGroupRef.current.rotation.x = THREE.MathUtils.damp(
         planetGroupRef.current.rotation.x,
         targetRotX,
-        3.5,
-        dt
-      );
-      planetGroupRef.current.position.x = THREE.MathUtils.damp(
-        planetGroupRef.current.position.x,
-        targetPosX,
-        3.5,
-        dt
-      );
-      planetGroupRef.current.position.y = THREE.MathUtils.damp(
-        planetGroupRef.current.position.y,
-        targetPosY,
-        3.5,
+        3.0,
         dt
       );
     }
@@ -195,110 +271,149 @@ const PlanetScene: React.FC<PlanetSceneProps> = ({ speed, showRings }) => {
 
   return (
     <>
-      {/* Studio Lighting Rig */}
-      <ambientLight color="#0e172e" intensity={1.2} />
-      <directionalLight position={[5, 3, 5]} color="#38bdf8" intensity={2.6} />
-      <directionalLight position={[-6, -2, -4]} color="#8b5cf6" intensity={3.2} />
-      <pointLight position={[2, -4, 3]} color="#ec4899" intensity={1.8} distance={15} />
+      {/* Cinematic Studio Lighting */}
+      <ambientLight color="#060c20" intensity={1.3} />
+      <directionalLight position={[4, 5, 5]} color="#38bdf8" intensity={3.0} />
+      <directionalLight position={[-4, -3, -3]} color="#c084fc" intensity={2.5} />
+      <pointLight position={[0, -1.8, 3.2]} color="#ec4899" intensity={2.2} distance={10} />
 
-      {/* Main Celestial Group */}
-      <group ref={planetGroupRef} rotation={[0.15, 0, 0.22]}>
-        {/* 1. Core Planet */}
+      {/* Main Celestial Celestial Group: Streamlined, lightweight, perfectly framed */}
+      <group ref={planetGroupRef} position={[0, -0.58, 0]}>
+        {/* 1. Streamlined Core Planet Sphere */}
         <mesh ref={coreRef}>
-          <sphereGeometry args={[1.4, 64, 64]} />
+          <sphereGeometry args={[1.38, 64, 64]} />
           <meshStandardMaterial
             map={planetTexture}
-            roughness={0.35}
-            metalness={0.25}
+            roughness={0.22}
+            metalness={0.4}
+            emissive="#00e5ff"
+            emissiveMap={planetTexture}
+            emissiveIntensity={0.6}
           />
         </mesh>
 
-        {/* 2. Atmospheric Fresnel Halo */}
-        <mesh ref={cloudsRef}>
-          <sphereGeometry args={[1.45, 36, 36]} />
-          <meshStandardMaterial
+        {/* 2. Delicate Geodesic Wireframe Overlay (Sleek, airy, mathematical) */}
+        <mesh ref={geodesicRef} geometry={geodesicGeo}>
+          <meshBasicMaterial
+            wireframe
             color="#38bdf8"
+            transparent
+            opacity={0.26}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+
+        {/* 3. Smooth Atmospheric Inner Halo */}
+        <mesh ref={haloRef}>
+          <sphereGeometry args={[1.45, 48, 48]} />
+          <meshStandardMaterial
+            color="#0ea5e9"
             transparent
             opacity={0.2}
             roughness={0.1}
-            metalness={0.1}
+            blending={THREE.AdditiveBlending}
             side={THREE.BackSide}
           />
         </mesh>
 
-        {/* 3. Tilted Holographic Orbital Ring */}
-        {showRings && (
-          <mesh ref={ringRef} rotation={[Math.PI / 2.3, 0, 0]}>
-            <ringGeometry args={[1.85, 2.7, 80]} />
-            <meshBasicMaterial
-              map={ringTexture}
-              side={THREE.DoubleSide}
-              transparent
-              opacity={0.85}
-              depthWrite={false}
-            />
-          </mesh>
-        )}
+        {/* 4. Smooth Outer Atmospheric Glow Fringe */}
+        <mesh>
+          <sphereGeometry args={[1.52, 32, 32]} />
+          <meshBasicMaterial
+            color="#818cf8"
+            transparent
+            opacity={0.12}
+            blending={THREE.AdditiveBlending}
+            side={THREE.BackSide}
+            depthWrite={false}
+          />
+        </mesh>
 
-        {/* 4. Cosmic Particle Dust System */}
-        {showRings && (
-          <points ref={particlesRef}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                args={[particlePositions, 3]}
-              />
-              <bufferAttribute
-                attach="attributes-color"
-                args={[particleColors, 3]}
-              />
-            </bufferGeometry>
-            <pointsMaterial
-              size={0.032}
-              vertexColors
-              transparent
-              opacity={0.75}
-              depthWrite={false}
+        {/* 5. Primary Glowing Energy Ring */}
+        <mesh
+          ref={ringRef}
+          rotation={[1.32, 0.18, -0.38]}
+          position={[0, 0, 0]}
+        >
+          <ringGeometry args={[1.68, 2.75, 128]} />
+          <meshBasicMaterial
+            map={ringTexture}
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.88}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+
+        {/* 6. Refined Secondary Razor-Thin Holographic Energy Loop */}
+        <mesh
+          ref={secondaryRingRef}
+          rotation={[1.32, 0.18, -0.38]}
+          position={[0, 0, 0]}
+        >
+          <ringGeometry args={[2.88, 2.92, 128]} />
+          <meshBasicMaterial
+            color="#38bdf8"
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.65}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+
+        {/* 7. Subtle Inner Resonance Ring */}
+        <mesh
+          ref={innerRingRef}
+          rotation={[1.32, 0.18, -0.38]}
+          position={[0, 0, 0]}
+        >
+          <ringGeometry args={[1.54, 1.6, 96]} />
+          <meshBasicMaterial
+            color="#e879f9"
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.4}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+
+        {/* 8. Refined Cosmic Particle Dust Swarm */}
+        <points ref={particlesRef}>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              args={[particlePositions, 3]}
             />
-          </points>
-        )}
+            <bufferAttribute
+              attach="attributes-color"
+              args={[particleColors, 3]}
+            />
+          </bufferGeometry>
+          <pointsMaterial
+            size={0.03}
+            vertexColors
+            transparent
+            opacity={0.82}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </points>
       </group>
     </>
   );
 };
-
-class CanvasErrorBoundary extends React.Component<
-  { fallback: React.ReactNode; children: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(error: any) {
-    console.warn('WebGL rendering fallback active:', error);
-  }
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-    return this.props.children;
-  }
-}
 
 export const ThreePlanet: React.FC<ThreePlanetProps> = ({
   className = '',
   onExploreZones,
   onEnterPlanetX
 }) => {
-  const rotationSpeed = 1;
-  const ringsVisible = true;
   const [webGlSupported, setWebGlSupported] = useState<boolean>(true);
 
-  // Check WebGL availability once
   useEffect(() => {
     try {
       const canvas = document.createElement('canvas');
@@ -311,79 +426,58 @@ export const ThreePlanet: React.FC<ThreePlanetProps> = ({
     }
   }, []);
 
-  const fallbackVisual = (
-    <div className="w-full h-full flex items-center justify-center p-6 bg-radial from-cyan-950/40 to-slate-950">
-      <div className="relative w-72 h-72 rounded-full bg-gradient-to-tr from-cyan-900 via-blue-800 to-fuchsia-900 border border-cyan-400/30 shadow-[0_0_80px_rgba(6,182,212,0.3)] flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full border border-fuchsia-500/30 scale-125 rotate-45" />
-        <div className="text-center p-4">
-          <span className="text-xs uppercase font-mono tracking-widest text-cyan-400">PLANET-X 2026</span>
-          <p className="text-sm font-semibold text-white mt-1">Procedural Core Matrix</p>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className={`relative w-full overflow-hidden select-none ${className}`}>
-      {/* 3D Scene Viewport rendered with React Three Fiber with Error Boundary */}
-      <div className="w-full h-[460px] md:h-[620px] lg:h-[720px] cursor-grab active:cursor-grabbing">
+    <div className={`relative w-full overflow-hidden select-none min-h-[580px] md:min-h-[720px] lg:min-h-[820px] flex items-center justify-center ${className}`}>
+      {/* 3D Scene Viewport rendered with React Three Fiber */}
+      <div className="absolute inset-0 cursor-grab active:cursor-grabbing z-0 flex items-center justify-center">
         {webGlSupported ? (
-          <CanvasErrorBoundary fallback={fallbackVisual}>
-            <Canvas
-              camera={{ position: [0, 0.4, 4.8], fov: 45 }}
-              dpr={[1, typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1]}
-              gl={{
-                antialias: true,
-                alpha: true,
-                powerPreference: 'high-performance'
-              }}
-            >
-              <Suspense fallback={null}>
-                <PlanetScene speed={rotationSpeed} showRings={ringsVisible} />
-              </Suspense>
-            </Canvas>
-          </CanvasErrorBoundary>
+          <Canvas
+            camera={{ position: [0, 0.1, 4.4], fov: 46 }}
+            dpr={[1, typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1]}
+            gl={{
+              antialias: true,
+              alpha: true,
+              powerPreference: 'high-performance'
+            }}
+          >
+            <Suspense fallback={null}>
+              <PlanetScene speed={1} />
+            </Suspense>
+          </Canvas>
         ) : (
-          fallbackVisual
+          <div className="w-full h-full flex items-center justify-center bg-radial from-cyan-950/40 to-slate-950">
+            <div className="relative w-80 h-80 rounded-full bg-gradient-to-tr from-cyan-900 via-blue-900 to-fuchsia-950 border border-cyan-400/40 shadow-[0_0_90px_rgba(6,182,212,0.4)]" />
+          </div>
         )}
       </div>
 
-      {/* Hero Overlay Text Layer (Semantic DOM overlay) */}
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 md:p-12 lg:p-16 z-10">
-        {/* Top Kicker & Institution */}
-        <div className="max-w-4xl mx-auto text-center pt-2">
-          <div className="text-xs sm:text-sm font-mono tracking-[0.25em] text-cyan-400 uppercase mb-3 drop-shadow-md">
-            SVKM'S NMIMS GLOBAL UNIVERSITY, DHULE PRESENTS
-          </div>
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white uppercase drop-shadow-[0_10px_35px_rgba(0,0,0,0.8)]">
-            PLANET-X <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">2026</span>
-          </h1>
-          <p className="mt-2 sm:mt-3 text-base sm:text-xl md:text-2xl font-medium tracking-wide text-slate-200">
-            BEYOND INNOVATION. BEYOND LIMITS.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-semibold text-slate-300">
-            <span>3 ZONES</span>
-            <span aria-hidden="true" className="text-cyan-500">/</span>
-            <span>8 COMPETITIONS</span>
-            <span aria-hidden="true" className="text-cyan-500">/</span>
-            <span className="text-cyan-300">₹50,000 PRIZE POOL</span>
-          </div>
+      {/* Semantic DOM Typography Overlay (Matches Reference Image Pixel-for-Pixel) */}
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 text-center pointer-events-none pt-12 md:pt-16 pb-20">
+        {/* Kicker */}
+        <div className="text-[11px] sm:text-xs md:text-sm font-mono tracking-[0.22em] text-[#38bdf8] uppercase mb-2 sm:mb-3 font-semibold drop-shadow-[0_2px_12px_rgba(56,189,248,0.5)]">
+          SVKM'S NMIMS GLOBAL UNIVERSITY, DHULE PRESENTS
         </div>
 
-        {/* Center/Bottom CTA Buttons */}
-        <div className="max-w-md mx-auto w-full pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-4 pb-12 sm:pb-16">
-          <button
-            onClick={onEnterPlanetX}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm tracking-wide text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
-          >
-            ENTER PLANET-X
-          </button>
-          <button
-            onClick={onExploreZones}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm tracking-wide text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-500/50 transition-all backdrop-blur-md whitespace-nowrap"
-          >
-            EXPLORE THE ZONES
-          </button>
+        {/* Main Title: PLANET-X 2026 */}
+        <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-[104px] font-black font-display tracking-tight text-white uppercase leading-none drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]">
+          PLANET-X{' '}
+          <span className="bg-gradient-to-r from-[#38bdf8] via-[#a855f7] to-[#e879f9] bg-clip-text text-transparent">
+            2026
+          </span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-2 sm:mt-3 md:mt-4 text-base sm:text-xl md:text-2xl font-bold tracking-wider text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+          BEYOND INNOVATION. BEYOND LIMITS.
+        </p>
+
+        {/* Metric Bar: 3 ZONES / 8 COMPETITIONS / ₹50,000 PRIZE POOL */}
+        <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm md:text-base font-bold tracking-wider uppercase drop-shadow-md">
+          <span className="text-white">3 ZONES</span>
+          <span className="text-cyan-400 font-light">/</span>
+          <span className="text-white">8 COMPETITIONS</span>
+          <span className="text-cyan-400 font-light">/</span>
+          <span className="text-cyan-400">₹50,000 PRIZE POOL</span>
         </div>
       </div>
     </div>

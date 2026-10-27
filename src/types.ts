@@ -82,6 +82,7 @@ export interface OrganizingTeamMember {
   bio: string;
   photoUrl: string;
   socialLink: string;
+  phone?: string;
   displayOrder: number;
 }
 

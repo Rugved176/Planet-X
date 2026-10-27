@@ -89,7 +89,9 @@ export const Footer: React.FC<FooterProps> = ({
               <p className="text-slate-200 font-medium">SVKM's NMIMS Dhule Campus</p>
               <p>Mumbai-Agra Highway</p>
               <p>Dhule, Maharashtra 424001</p>
-              <p className="pt-2 text-cyan-400 font-mono">contact.planetx@nmims.edu</p>
+              <a href="mailto:planetx.event@gmail.com" className="pt-2 text-cyan-400 hover:underline hover:text-cyan-300 font-mono block">
+                planetx.event@gmail.com
+              </a>
             </address>
           </div>
         </div>

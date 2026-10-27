@@ -7,9 +7,15 @@ import {
   GlobalSettings, 
   OrganizingTeamMember, 
   EmailLog, 
-  AuditLog 
+  AuditLog,
+  ContactMessage
 } from '../types.ts';
 import { api } from '../lib/api.ts';
+import { 
+  generateTeamDossierPdf, 
+  generateAllRegistrationsMasterPdf, 
+  getZoneLabel 
+} from '../lib/pdfGenerator.ts';
 import { 
   Shield, 
   Users, 
@@ -30,7 +36,9 @@ import {
   MessageCircle,
   Clock,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Send,
+  Check
 } from 'lucide-react';
 
 interface AdminDashboardPageProps {
@@ -50,7 +58,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 }) => {
   const { user, isAdmin } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'registrations' | 'events' | 'settings' | 'team' | 'emails' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'registrations' | 'inquiries' | 'events' | 'settings' | 'team' | 'emails' | 'audit'>('overview');
   
   // Data states
   const [overview, setOverview] = useState<any>(null);
@@ -60,6 +68,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [settings, setSettings] = useState<GlobalSettings>(initialSettings);
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [queries, setQueries] = useState<ContactMessage[]>([]);
+  const [filterQueryStatus, setFilterQueryStatus] = useState<'all' | 'unread' | 'replied'>('all');
+  const [querySearch, setQuerySearch] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +104,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       setLoading(true);
       setError(null);
 
-      const [overviewRes, regsRes, emailsRes, auditsRes] = await Promise.all([
+      const [overviewRes, regsRes, emailsRes, auditsRes, queriesRes] = await Promise.all([
         api.getAdminOverview(),
         api.getAdminRegistrations({
           zone: filterZone,
@@ -103,17 +114,29 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           search: searchQuery
         }),
         api.getAdminEmails(),
-        api.getAdminAuditLogs()
+        api.getAdminAuditLogs(),
+        api.getAdminQueries().catch(() => ({ queries: [] }))
       ]);
 
       setOverview(overviewRes);
       setRegistrations(regsRes.registrations);
       setEmailLogs(emailsRes.emails);
       setAuditLogs(auditsRes.auditLogs);
+      setQueries(queriesRes.queries || []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleQueryStatus = async (queryId: string, currentStatus: 'unread' | 'replied') => {
+    const newStatus = currentStatus === 'unread' ? 'replied' : 'unread';
+    try {
+      const res = await api.updateQueryStatus(queryId, newStatus);
+      setQueries(res.queries);
+    } catch (err: any) {
+      console.error('Failed to update query status:', err);
     }
   };
 
@@ -247,6 +270,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         {[
           { id: 'overview', label: 'Overview Analytics', icon: TrendingUp },
           { id: 'registrations', label: `Registrations (${registrations.length})`, icon: Users },
+          { id: 'inquiries', label: `Participant Queries (${queries.filter(q => q.status === 'unread').length} new)`, icon: MessageCircle },
           { id: 'events', label: 'Competitions & Fees', icon: Layers },
           { id: 'settings', label: 'Event & Payment Config', icon: Settings },
           { id: 'team', label: 'Organizing Team (6)', icon: Users },
@@ -437,7 +461,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <thead className="bg-slate-950/80 text-slate-400 uppercase font-mono text-[10px]">
                   <tr>
                     <th className="p-4">Reg ID</th>
-                    <th className="p-4">Event</th>
+                    <th className="p-4">Event & Zone Track</th>
                     <th className="p-4">Team & Leader</th>
                     <th className="p-4">College</th>
                     <th className="p-4">Squad Size</th>
@@ -458,16 +482,47 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     registrations.map((r) => (
                       <tr key={r.id} className="hover:bg-slate-900/40 transition-colors">
                         <td className="p-4 font-mono font-bold text-cyan-300">{r.id}</td>
-                        <td className="p-4 font-semibold text-white">{r.eventName}</td>
+                        <td className="p-4">
+                          <p className="font-bold text-white text-sm">{r.eventName}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                              r.zoneId === 'zone-a'
+                                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                                : r.zoneId === 'zone-b'
+                                ? 'bg-violet-500/15 text-violet-300 border border-violet-500/30'
+                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                            }`}>
+                              {getZoneLabel(r.zoneId, zones)}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-mono block mt-0.5">
+                            {new Date(r.submittedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </td>
                         <td className="p-4">
                           <p className="font-semibold text-white">{r.teamName}</p>
-                          <p className="text-[11px] text-slate-400">{r.teamLeaderName} ({r.teamLeaderEmail})</p>
+                          <p className="text-[11px] text-slate-300 mt-0.5">
+                            <span className="text-slate-400">Leader:</span> {r.teamLeaderName}
+                          </p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono mt-0.5">
+                            <a href={`mailto:${r.teamLeaderEmail}`} className="hover:text-cyan-300 underline">
+                              {r.teamLeaderEmail}
+                            </a>
+                            {r.teamLeaderPhone && (
+                              <>
+                                <span>•</span>
+                                <a href={`tel:${r.teamLeaderPhone}`} className="hover:text-cyan-300 text-cyan-400">
+                                  {r.teamLeaderPhone}
+                                </a>
+                              </>
+                            )}
+                          </div>
                         </td>
                         <td className="p-4 text-slate-400 max-w-[150px] truncate">{r.college}</td>
                         <td className="p-4 text-slate-300 tabular-nums">
                           {r.teamMembers.length + 1} members
                         </td>
-                        <td className="p-4 text-cyan-300 tabular-nums">₹{r.registrationFee}</td>
+                        <td className="p-4 text-cyan-300 tabular-nums font-bold">₹{r.registrationFee}</td>
                         <td className="p-4">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
                             r.paymentStatus === 'verified'
@@ -478,6 +533,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           }`}>
                             {r.paymentStatus.replace('_', ' ')}
                           </span>
+                          {r.paymentReference && (
+                            <span className="block text-[9px] font-mono text-slate-500 truncate max-w-[100px] mt-0.5">
+                              {r.paymentReference}
+                            </span>
+                          )}
                         </td>
                         <td className="p-4">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase ${
@@ -491,15 +551,26 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           </span>
                         </td>
                         <td className="p-4 text-right">
-                          <button
-                            onClick={() => {
-                              setReviewingReg(r);
-                              setRejectionReason(r.rejectionReason || '');
-                            }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 transition-colors"
-                          >
-                            Review & Details
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => generateTeamDossierPdf(r, events.find(e => e.id === r.eventId), zones, settings)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 hover:text-white bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-700/60 transition-colors flex items-center gap-1 shadow-sm"
+                              title="Download complete delegation PDF dossier with roster and payment slip"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                              <span>PDF</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setReviewingReg(r);
+                                setRejectionReason(r.rejectionReason || '');
+                              }}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 transition-colors"
+                            >
+                              Review & Details
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -508,6 +579,175 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB: PARTICIPANT QUERIES & INQUIRIES */}
+      {activeTab === 'inquiries' && (
+        <div className="space-y-6">
+          {/* Header & Filter Controls */}
+          <div className="p-4 rounded-2xl bg-[#0b1126] border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search queries by participant name, email, subject, or message..."
+                value={querySearch}
+                onChange={(e) => setQuerySearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            {/* Status Pills */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setFilterQueryStatus('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  filterQueryStatus === 'all'
+                    ? 'bg-cyan-500 text-slate-950'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                All ({queries.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterQueryStatus('unread')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
+                  filterQueryStatus === 'unread'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                <span>Unread</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-950/80 text-amber-200">
+                  {queries.filter(q => q.status === 'unread').length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterQueryStatus('replied')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  filterQueryStatus === 'replied'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'text-emerald-400 hover:text-emerald-300'
+                }`}
+              >
+                Replied ({queries.filter(q => q.status === 'replied').length})
+              </button>
+            </div>
+          </div>
+
+          {/* Queries List */}
+          {(() => {
+            const filteredQueries = queries.filter(q => {
+              if (filterQueryStatus !== 'all' && q.status !== filterQueryStatus) return false;
+              if (querySearch.trim()) {
+                const s = querySearch.toLowerCase();
+                return (
+                  q.name.toLowerCase().includes(s) ||
+                  q.email.toLowerCase().includes(s) ||
+                  q.subject.toLowerCase().includes(s) ||
+                  q.message.toLowerCase().includes(s)
+                );
+              }
+              return true;
+            });
+
+            if (filteredQueries.length === 0) {
+              return (
+                <div className="p-12 text-center rounded-2xl bg-[#0b1126] border border-slate-800 text-slate-400">
+                  <MessageCircle className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-300">No participant inquiries found</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {querySearch ? 'No messages match your search filter.' : 'Incoming contact form submissions will be listed here with complete message details.'}
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-4">
+                {filteredQueries.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-5 rounded-2xl bg-[#0b1126] border transition-all ${
+                      item.status === 'unread'
+                        ? 'border-amber-500/40 shadow-lg shadow-amber-500/5'
+                        : 'border-slate-800'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-bold text-white">{item.name}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold ${
+                              item.status === 'unread'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                        <a
+                          href={`mailto:${item.email}?subject=${encodeURIComponent(`[PLANET-X 2026] Re: ${item.subject}`)}`}
+                          className="text-xs font-mono text-cyan-400 hover:underline hover:text-cyan-300 block mt-0.5"
+                        >
+                          {item.email}
+                        </a>
+                      </div>
+
+                      <div className="text-right text-[11px] text-slate-400 flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{new Date(item.receivedAt).toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    {/* Subject */}
+                    <div className="mb-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">
+                        Subject
+                      </span>
+                      <h4 className="text-sm font-semibold text-slate-200">
+                        {item.subject}
+                      </h4>
+                    </div>
+
+                    {/* Complete Query Message */}
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 text-xs text-slate-300 whitespace-pre-wrap leading-relaxed font-sans mb-4">
+                      {item.message}
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleQueryStatus(item.id, item.status)}
+                        className="text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>
+                          {item.status === 'unread' ? 'Mark as Replied' : 'Mark as Unread'}
+                        </span>
+                      </button>
+
+                      <a
+                        href={`mailto:${item.email}?subject=${encodeURIComponent(`[PLANET-X 2026] Re: ${item.subject}`)}`}
+                        className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white flex items-center gap-1.5 shadow transition-all"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>Reply to Participant</span>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -855,13 +1095,22 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
           <div className="relative w-full max-w-2xl bg-[#0b1126] border border-slate-700 rounded-2xl shadow-2xl p-6 sm:p-8 my-8 text-slate-100">
             <div className="border-b border-slate-800 pb-4 mb-4">
-              <span className="text-xs font-mono text-cyan-400 uppercase">
-                PAYMENT AUDIT & VERIFICATION
-              </span>
-              <h3 className="text-2xl font-bold font-display text-white mt-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">
+                  PAYMENT AUDIT & VERIFICATION
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                  {getZoneLabel(reviewingReg.zoneId, zones)}
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold font-display text-white mt-1">
                 {reviewingReg.eventName} — {reviewingReg.teamName}
               </h3>
-              <p className="text-xs text-slate-400">Registration ID: {reviewingReg.id}</p>
+              <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                <span className="font-mono text-cyan-300">ID: {reviewingReg.id}</span>
+                <span>•</span>
+                <span>Submitted: {new Date(reviewingReg.submittedAt).toLocaleString('en-IN')}</span>
+              </div>
             </div>
 
             {/* Delegation Data Summary */}
@@ -869,8 +1118,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               <div>
                 <span className="text-slate-500 block">Leader:</span>
                 <span className="text-white font-medium">{reviewingReg.teamLeaderName}</span>
-                <span className="block text-slate-400">{reviewingReg.teamLeaderEmail}</span>
-                <span className="block text-slate-400">{reviewingReg.teamLeaderPhone}</span>
+                <span className="block text-slate-400 font-mono">{reviewingReg.teamLeaderEmail}</span>
+                <span className="block text-cyan-300 font-mono">{reviewingReg.teamLeaderPhone}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">College:</span>
@@ -879,6 +1128,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <span className="text-cyan-300 font-bold text-sm">₹{reviewingReg.registrationFee}</span>
               </div>
             </div>
+
+            {/* Squad Members Roster */}
+            {reviewingReg.teamMembers && reviewingReg.teamMembers.length > 0 && (
+              <div className="mb-4">
+                <span className="text-xs font-mono uppercase text-slate-400 block mb-2">
+                  Squad Members ({reviewingReg.teamMembers.length}):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[140px] overflow-auto">
+                  {reviewingReg.teamMembers.map((m, idx) => (
+                    <div key={idx} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                      <p className="font-semibold text-white">{m.name}</p>
+                      <p className="text-slate-400 font-mono text-[11px] truncate">{m.email}</p>
+                      {m.phone && <p className="text-cyan-400 font-mono text-[11px] mt-0.5">{m.phone}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Payment Proof Image / PDF */}
             <div className="mb-4">
@@ -935,28 +1202,40 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               />
             </div>
 
-            {/* Decision Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-              <button
-                onClick={() => setReviewingReg(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
-              >
-                Cancel
-              </button>
+            {/* Decision Actions & PDF Download */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReviewingReg(null)}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => generateTeamDossierPdf(reviewingReg, events.find(e => e.id === reviewingReg.eventId), zones, settings)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-cyan-300 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600/70 transition-all flex items-center gap-1.5 shadow"
+                  title="Download complete printable PDF report for this delegation with attached payment slip"
+                >
+                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Download Dossier (PDF)</span>
+                </button>
+              </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => handlePaymentReview(false)}
                   disabled={reviewSubmitting}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-rose-300 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 transition-colors flex items-center gap-1.5"
                 >
                   <XCircle className="w-4 h-4" />
-                  <span>Reject Payment</span>
+                  <span>Reject</span>
                 </button>
                 <button
                   onClick={() => handlePaymentReview(true)}
                   disabled={reviewSubmitting}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 to-emerald-300 hover:from-emerald-300 hover:to-white transition-all flex items-center gap-1.5 shadow-lg"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 to-emerald-300 hover:from-emerald-300 hover:to-white transition-all flex items-center gap-1.5 shadow-lg"
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>Approve & Confirm</span>

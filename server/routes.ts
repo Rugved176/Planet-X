@@ -241,6 +241,75 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
   }
 });
 
+apiRouter.post('/auth/google', async (req: Request, res: Response) => {
+  try {
+    const { uid, email, name, photoUrl } = req.body;
+    if (!email) {
+      res.status(400).json({ error: 'Email is required for Google authentication' });
+      return;
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanName = String(name || email.split('@')[0] || 'Participant').trim();
+    const db = dbManager.get();
+
+    // Check if this account is an administrator
+    const isAdminAccount = cleanEmail === 'planetx.event@gmail.com' ||
+      db.users.some(u => u.email.toLowerCase() === cleanEmail && u.role === 'admin');
+
+    // BLOCK Google authentication for Admin accounts per security requirement:
+    if (isAdminAccount) {
+      res.status(403).json({
+        error: 'Google authentication is blocked for Administrator login. Administrators must log in using official email (planetx.event@gmail.com) and fixed password (SVKM).'
+      });
+      return;
+    }
+
+    let user = db.users.find(u => u.email === cleanEmail);
+
+    if (!user) {
+      // Create new Google-authenticated user (strictly participant)
+      const newUser: UserProfile = {
+        id: uid ? `usr-g-${uid}` : `usr-g-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        email: cleanEmail,
+        passwordHash: '',
+        name: cleanName,
+        phone: '',
+        college: "SVKM's NMIMS Global University, Dhule",
+        role: 'participant',
+        emailVerified: true,
+        createdAt: new Date().toISOString()
+      };
+
+      dbManager.update(d => {
+        d.users.push(newUser);
+      });
+      user = newUser;
+    }
+
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        college: user.college,
+        role: user.role,
+        emailVerified: true
+      },
+      token
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Google authentication failed' });
+  }
+});
+
 apiRouter.get('/auth/me', authMiddleware, (req: AuthenticatedRequest, res: Response) => {
   const user = req.user!;
   res.json({
@@ -366,7 +435,10 @@ apiRouter.post('/registrations', authMiddleware, async (req: AuthenticatedReques
       teamLeaderPhone, 
       college, 
       teamMembers, 
-      additionalInfo 
+      additionalInfo,
+      paymentProofBase64,
+      paymentProofFileName,
+      paymentReference
     } = req.body;
 
     if (!eventId || !teamName) {
@@ -383,6 +455,12 @@ apiRouter.post('/registrations', authMiddleware, async (req: AuthenticatedReques
 
     if (!event.isOpen) {
       res.status(400).json({ error: 'Registrations for this competition are currently closed' });
+      return;
+    }
+
+    // Require payment proof and reference when fee is applicable
+    if (event.registrationFee > 0 && (!paymentProofBase64 || !paymentReference)) {
+      res.status(400).json({ error: 'Submitting payment slip and UTR transaction reference is mandatory to complete registration.' });
       return;
     }
 
@@ -417,6 +495,8 @@ apiRouter.post('/registrations', authMiddleware, async (req: AuthenticatedReques
     const randomCode = Math.floor(1000 + Math.random() * 9000);
     const regId = `PX26-${prefix}-${randomCode}`;
 
+    const hasProof = Boolean(paymentProofBase64 && paymentReference);
+
     const newRegistration: Registration = {
       id: regId,
       userId: user.id,
@@ -437,8 +517,12 @@ apiRouter.post('/registrations', authMiddleware, async (req: AuthenticatedReques
       })),
       additionalInfo: additionalInfo || {},
       registrationFee: event.registrationFee,
-      paymentStatus: event.registrationFee === 0 ? 'verified' : 'unpaid',
+      paymentStatus: hasProof ? 'pending_verification' : (event.registrationFee === 0 ? 'verified' : 'unpaid'),
       registrationStatus: event.registrationFee === 0 ? 'confirmed' : 'submitted',
+      paymentReference: paymentReference ? String(paymentReference).trim() : undefined,
+      paymentProofUrl: paymentProofBase64 || undefined,
+      paymentProofFileName: paymentProofFileName || (paymentProofBase64 ? 'payment_slip.png' : undefined),
+      paymentProofUploadedAt: hasProof ? new Date().toISOString() : undefined,
       submittedAt: new Date().toISOString()
     };
 
@@ -849,6 +933,7 @@ apiRouter.get('/admin/export-csv', adminOnlyMiddleware, (_req: AuthenticatedRequ
       'Payment Status',
       'Registration Status',
       'Payment Ref / UTR',
+      'Payment Proof Attached',
       'Submission Timestamp'
     ]
   ];
@@ -870,6 +955,7 @@ apiRouter.get('/admin/export-csv', adminOnlyMiddleware, (_req: AuthenticatedRequ
       r.paymentStatus,
       r.registrationStatus,
       r.paymentReference || 'N/A',
+      r.paymentProofUrl ? 'YES (Receipt Slip Attached)' : 'NO',
       r.submittedAt
     ]);
   });
@@ -881,4 +967,23 @@ apiRouter.get('/admin/export-csv', adminOnlyMiddleware, (_req: AuthenticatedRequ
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename=PLANET-X-2026-Registrations-${new Date().toISOString().split('T')[0]}.csv`);
   res.send(csvContent);
+});
+
+// Admin view all participant contact inquiries
+apiRouter.get('/admin/queries', adminOnlyMiddleware, (_req: AuthenticatedRequest, res: Response) => {
+  const db = dbManager.get();
+  res.json({ queries: db.contactMessages });
+});
+
+// Admin update query status
+apiRouter.patch('/admin/queries/:id', adminOnlyMiddleware, (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  dbManager.update(d => {
+    const q = d.contactMessages.find(m => m.id === id);
+    if (q && status) {
+      q.status = status;
+    }
+  });
+  res.json({ success: true, queries: dbManager.get().contactMessages });
 });

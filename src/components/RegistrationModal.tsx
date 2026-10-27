@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { CompetitionEvent, Registration } from '../types.ts';
 import { api } from '../lib/api.ts';
 import confetti from 'canvas-confetti';
-import { X, Plus, Trash2, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle2, AlertCircle, ArrowRight, Upload, Image as ImageIcon, FileCheck } from 'lucide-react';
 
 interface RegistrationModalProps {
   event: CompetitionEvent;
@@ -23,6 +23,11 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onC
   const [teamMembers, setTeamMembers] = useState<Array<{ name: string; email: string; phone: string; role: string }>>([]);
   const [additionalInfo, setAdditionalInfo] = useState<Record<string, string>>({});
   
+  // Mandatory Payment Proof state
+  const [paymentProofBase64, setPaymentProofBase64] = useState<string>('');
+  const [paymentProofFileName, setPaymentProofFileName] = useState<string>('');
+  const [paymentReference, setPaymentReference] = useState<string>('');
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedReg, setCompletedReg] = useState<Registration | null>(null);
@@ -54,6 +59,23 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onC
       ...additionalInfo,
       [fieldId]: value
     });
+  };
+
+  const handleProofFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      setError('File is too large. Please upload an image under 8MB.');
+      return;
+    }
+
+    setPaymentProofFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPaymentProofBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,6 +120,18 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onC
       }
     }
 
+    // Mandatory payment proof and UTR reference for paid events
+    if (event.registrationFee > 0) {
+      if (!paymentProofBase64) {
+        setError('Payment slip / screenshot is mandatory. Please scan the QR code and upload your payment proof.');
+        return;
+      }
+      if (!paymentReference.trim()) {
+        setError('Please enter your 12-digit UPI UTR / Transaction Reference ID.');
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const res = await api.submitRegistration({
@@ -107,7 +141,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onC
         teamLeaderPhone,
         college,
         teamMembers,
-        additionalInfo
+        additionalInfo,
+        paymentProofBase64: paymentProofBase64 || undefined,
+        paymentProofFileName: paymentProofFileName || undefined,
+        paymentReference: paymentReference.trim() || undefined
       });
 
       confetti({
@@ -374,17 +411,134 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onC
                 </div>
               )}
 
-              {/* Fee & Submission Summary */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-cyan-500/20 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] text-slate-400 block">Registration Fee</span>
-                  <span className="text-xl font-bold font-display text-cyan-300">₹{event.registrationFee}</span>
+              {/* Fee & Mandatory Payment Submission Section */}
+              {event.registrationFee > 0 ? (
+                <div className="space-y-4 pt-3 border-t border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-mono text-amber-400 uppercase tracking-wider block">
+                        Mandatory Payment Step
+                      </span>
+                      <h3 className="text-sm font-bold text-white mt-0.5">
+                        Scan Official QR Code & Attach Payment Slip
+                      </h3>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-amber-950/80 text-amber-300 border border-amber-700/60">
+                      Fee: ₹{event.registrationFee}
+                    </span>
+                  </div>
+
+                  {/* QR Code and Account Card */}
+                  <div className="p-4 rounded-xl bg-slate-950/90 border border-amber-500/30 flex flex-col sm:flex-row items-center gap-4">
+                    <div className="shrink-0 text-center">
+                      <img 
+                        src="/assets/aistudio/image_6399a176.png" 
+                        alt="PLANET-X Official UPI QR Code" 
+                        className="w-36 h-36 object-contain rounded-xl border border-slate-700 bg-white p-1 shadow-md shadow-amber-500/10"
+                      />
+                      <span className="text-[10px] text-slate-400 font-mono block mt-1">Scan via any UPI App</span>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-left flex-1 w-full">
+                      <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400">Payee Name:</span>
+                          <span className="font-semibold text-white">Rugved Solanki</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400">UPI ID:</span>
+                          <span className="font-mono font-bold text-cyan-300 select-all">9975952579@fam</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400">Payable Amount:</span>
+                          <span className="font-mono font-bold text-emerald-400">₹{event.registrationFee}</span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Pay via Google Pay, PhonePe, Paytm, or BHIM. After payment, take a screenshot of the transaction slip and upload it below with the 12-digit UTR reference.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payment Slip Upload & UTR Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* File Upload */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                        Upload Payment Slip / Screenshot *
+                      </label>
+                      {paymentProofBase64 ? (
+                        <div className="p-2.5 rounded-xl bg-slate-950 border border-emerald-500/40 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <img 
+                              src={paymentProofBase64} 
+                              alt="Proof preview" 
+                              className="w-10 h-10 object-cover rounded-lg border border-slate-700 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <span className="text-xs font-medium text-emerald-300 block truncate">
+                                {paymentProofFileName || 'Slip Attached'}
+                              </span>
+                              <span className="text-[10px] text-slate-400">Ready to submit</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPaymentProofBase64('');
+                              setPaymentProofFileName('');
+                            }}
+                            className="p-1 rounded text-slate-400 hover:text-rose-400 text-xs shrink-0"
+                            title="Remove attachment"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-dashed border-cyan-500/40 hover:border-cyan-400 bg-slate-950/60 hover:bg-slate-950 cursor-pointer transition-all text-center">
+                          <Upload className="w-5 h-5 text-cyan-400 mb-1" />
+                          <span className="text-xs font-semibold text-cyan-300">Choose Slip / Screenshot</span>
+                          <span className="text-[10px] text-slate-500">PNG, JPG, WebP up to 8MB</span>
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={handleProofFileChange}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* UTR / Transaction Ref */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                        12-Digit UTR / Transaction ID *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 4239XXXXXXXX or UPI Ref"
+                        value={paymentReference}
+                        onChange={(e) => setPaymentReference(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:outline-none text-xs text-white placeholder:text-slate-600 font-mono"
+                      />
+                      <span className="text-[10px] text-slate-500 block mt-1">
+                        Found in your bank receipt or UPI transaction details.
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right text-[11px] text-slate-400">
-                  <span>Payment verification available</span>
-                  <span className="block text-slate-500">via UPI & QR in next step</span>
+              ) : (
+                <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/20 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">Registration Fee</span>
+                    <span className="text-xl font-bold font-display text-emerald-400">Free / Open Entry</span>
+                  </div>
+                  <div className="text-right text-[11px] text-emerald-300">
+                    <span>No payment required</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-3 pt-3">

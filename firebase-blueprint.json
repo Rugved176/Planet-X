@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile stored for authenticated participant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "phone": { "type": "string" },
+        "college": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "name", "role", "createdAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Designated administrator record",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "ConnectionTest": {
+      "title": "ConnectionTest",
+      "description": "Probe document for connectivity verification",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profiles keyed by Firebase Auth UID"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Stores admin UID markers for RBAC"
+    },
+    "/test/{testId}": {
+      "schema": "ConnectionTest",
+      "description": "Connectivity test document"
+    }
+  }
+}

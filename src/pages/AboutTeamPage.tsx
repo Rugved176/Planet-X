@@ -136,14 +136,14 @@ export const AboutTeamPage: React.FC<AboutTeamPageProps> = ({ teamMembers }) => 
               {/* Action Buttons: Email & Phone Contact (Matching Techfest Card Footer) */}
               <div className="pt-3 border-t border-slate-800 space-y-2">
                 <a
-                  href="mailto:planetx.event@gmail.com"
+                  href={`mailto:${member.email || 'planetx.event@gmail.com'}`}
                   className="w-full py-1.5 px-3 rounded-lg bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300 hover:text-cyan-300 flex items-center justify-between transition-colors"
                 >
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-yellow-400" />
-                    <span>planetx.event@gmail.com</span>
+                  <span className="flex items-center gap-1.5 truncate">
+                    <Mail className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                    <span className="truncate">{member.email || 'planetx.event@gmail.com'}</span>
                   </span>
-                  <span className="text-[10px] text-slate-500 font-sans">Official Mail</span>
+                  <span className="text-[10px] text-slate-500 font-sans shrink-0">Official Mail</span>
                 </a>
 
                 <div className="flex items-center gap-2">

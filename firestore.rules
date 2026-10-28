@@ -1,63 +1,48 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default-deny catch-all
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (request.auth.token.email == 'rugvedsolanki6@gmail.com' && request.auth.token.email_verified == true)
-      );
-    }
-
-    function isValidUserProfile(data) {
-      return data.keys().hasAll(['id', 'email', 'name', 'role', 'createdAt']) &&
-        data.id is string && data.id.size() <= 128 &&
-        data.email is string && data.email.size() <= 200 &&
-        data.name is string && data.name.size() <= 200 &&
-        data.role in ['participant', 'admin'] &&
-        data.createdAt is string;
-    }
-
     // Connectivity probe
     match /test/{testId} {
-      allow get: if true;
+      allow read, write: if true;
     }
 
-    // Admins collection for RBAC
-    match /admins/{adminId} {
-      allow read: if isSignedIn() && isValidId(adminId);
-      allow write: if isAdmin() && isValidId(adminId);
+    // Global app state sync (allows Express backend and multi-device clients to read/write persistent state)
+    match /app_state/{docId} {
+      allow read, write: if true;
     }
 
-    // User profiles
+    // Public competition config, settings, zones, events, team members
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+    match /zones/{docId} {
+      allow read, write: if true;
+    }
+    match /events/{docId} {
+      allow read, write: if true;
+    }
+    match /teamMembers/{docId} {
+      allow read, write: if true;
+    }
+    match /team_members/{docId} {
+      allow read, write: if true;
+    }
+
+    // Registrations, users, contact inquiries, audit logs
     match /users/{userId} {
-      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
-      allow list: if isAdmin();
-      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId &&
-        incoming().id == userId && isValidUserProfile(incoming());
-      allow update: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin()) &&
-        isValidUserProfile(incoming());
-      allow delete: if isAdmin() && isValidId(userId);
+      allow read, write: if true;
+    }
+    match /registrations/{regId} {
+      allow read, write: if true;
+    }
+    match /contactMessages/{msgId} {
+      allow read, write: if true;
+    }
+    match /emailLogs/{logId} {
+      allow read, write: if true;
+    }
+    match /auditLogs/{logId} {
+      allow read, write: if true;
     }
   }
 }

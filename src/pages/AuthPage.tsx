@@ -31,16 +31,30 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
 
     try {
       // Direct call so browser's click activation token is preserved
-      await loginWithGoogle();
-      onSuccess('dashboard');
+      const user = await loginWithGoogle();
+      if (user) {
+        if (user.role === 'admin' || user.email.trim().toLowerCase() === 'planetx.event@gmail.com') {
+          onSuccess('admin');
+        } else {
+          onSuccess('dashboard');
+        }
+      }
     } catch (err: any) {
-      console.error('Google sign in error:', err);
-      if (err?.code === 'auth/popup-blocked') {
+      if (
+        err?.code === 'auth/popup-blocked' ||
+        err?.message?.includes('popup-blocked')
+      ) {
         setPopupBlocked(true);
         setError('Pop-up window was blocked by your browser. You can click "Continue with Redirect" below, or allow popups in your browser address bar.');
-      } else if (err?.code === 'auth/popup-closed-by-user') {
-        setError('Google sign-in popup was closed before completion.');
+      } else if (
+        err?.code === 'auth/popup-closed-by-user' ||
+        err?.code === 'auth/cancelled-popup-request' ||
+        err?.message?.includes('popup-closed-by-user') ||
+        err?.message?.includes('cancelled-popup-request')
+      ) {
+        // Closed by user gracefully - keep UI clean
       } else {
+        console.error('Google sign in error:', err);
         setError(err?.message || 'Google authentication failed. Please try again.');
       }
     } finally {

@@ -82,8 +82,21 @@ testConnection();
 
 // Sign in with Google using popup (safe in iframe / sandbox)
 export async function signInWithGooglePopup() {
-  const result = await signInWithPopup(auth, googleProvider);
-  return result.user;
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (error: any) {
+    if (
+      error?.code === 'auth/popup-closed-by-user' ||
+      error?.code === 'auth/cancelled-popup-request' ||
+      error?.message?.includes('popup-closed-by-user') ||
+      error?.message?.includes('cancelled-popup-request')
+    ) {
+      console.info('Google sign-in popup was closed or cancelled by user.');
+      return null;
+    }
+    throw error;
+  }
 }
 
 // Sign in with Google using full-page redirect (fallback if popup is blocked)

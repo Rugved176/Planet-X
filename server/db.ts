@@ -1,5 +1,22 @@
 import fs from 'fs';
 import path from 'path';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
+
+const CONFIG_FILE = path.resolve(process.cwd(), 'firebase-applet-config.json');
+export let firestoreDb: any = null;
+
+try {
+  if (fs.existsSync(CONFIG_FILE)) {
+    const raw = fs.readFileSync(CONFIG_FILE, 'utf-8');
+    const firebaseConfig = JSON.parse(raw);
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    firestoreDb = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    console.log('[Firestore] Backend server initialized with database:', firebaseConfig.firestoreDatabaseId);
+  }
+} catch (err) {
+  console.error('[Firestore] Error initializing Firestore in server/db.ts:', err);
+}
 
 export interface UserProfile {
   id: string;
@@ -86,6 +103,7 @@ export interface OrganizingTeamMember {
   photoUrl: string;
   socialLink: string;
   phone?: string;
+  email?: string;
   displayOrder: number;
 }
 
@@ -187,7 +205,7 @@ export const INITIAL_ZONES: CompetitionZone[] = [
     name: 'FUN-ZONE',
     tagline: 'Where Wit, Tactical Mindset & Reflexes Collide',
     description: 'High-octane excitement spanning the frontiers of AI trends, sharp rhetorical debate, and intense competitive multiplayer gaming.',
-    eventIds: ['ai-quiz', 'debate-competition', 'gaming-competition']
+    eventIds: ['ai-quiz', 'debate-competition', 'free-fire', 'bgmi']
   },
   {
     id: 'zone-c',
@@ -378,27 +396,63 @@ export const INITIAL_EVENTS: CompetitionEvent[] = [
     whatsappVisibility: 'after_submission'
   },
   {
-    id: 'gaming-competition',
-    slug: 'gaming-competition',
+    id: 'free-fire',
+    slug: 'free-fire',
     zoneId: 'zone-b',
     zoneName: 'FUN-ZONE',
-    name: 'GAMING COMPETITION',
-    shortDescription: 'Competitive esports showdown across high-octane multiplayer titles.',
-    fullDescription: 'Assemble your squad for the ultimate esports arena. Compete in intense bracket-style elimination matches showcasing tactical coordination, lightning reflexes, and strategic synergy.',
+    name: 'FREE FIRE CHAMPIONSHIP',
+    shortDescription: 'High-octane mobile battle royale tournament for Free Fire squads.',
+    fullDescription: 'Survive and dominate in the official PLANET-X Free Fire Mobile Battle Royale. Show off tactical rotations, gunplay precision, and squad coordination in custom room matches.',
     objectives: [
-      'Compete in sanctioned esports tournament brackets',
-      'Demonstrate squad communication and clutch mechanical gameplay',
-      'Climb double-elimination brackets to championship victory'
+      'Outsurvive rival squads across fast-paced Battle Royale rounds',
+      'Demonstrate tactical rotations, zone management, and clutch gunplay',
+      'Claim the Booyah and top the kills scoreboard'
     ],
-    eligibility: 'All college gaming squads with active player handles.',
+    eligibility: 'Open to all college Free Fire squads with valid UID handles.',
     rules: [
-      'Standard competitive tournament rules and fair-play anti-cheat enforcement.',
-      'Participants must bring their own peripherals if specified.',
-      'Unsportsmanlike conduct leads to instant forfeit.'
+      'Custom room credentials will be shared in the official WhatsApp group prior to match start.',
+      '4-player squad format. Emulators are strictly prohibited.',
+      'Unsportsmanlike conduct, hacking, or teaming up leads to instant disqualification.',
+      'All squad members must be present in room lobby 10 minutes prior to match time.'
     ],
     judgingCriteria: [
-      'Tournament Bracket Progression',
-      'Round Differential & Match Wins'
+      'Match Placement Points',
+      'Total Team Kill Count'
+    ],
+    minTeamSize: 1,
+    maxTeamSize: 4,
+    registrationFee: 150,
+    registrationDeadline: '2026-11-17T23:59:59',
+    isOpen: true,
+    whatsappGroupLink: '',
+    whatsappVisibility: 'after_confirmation',
+    customFields: [
+      { id: 'freeFireUids', label: 'In-Game UIDs & IGNs for All Members', placeholder: 'e.g. Leader UID: 12345678, IGN: ApexPredator', required: true }
+    ]
+  },
+  {
+    id: 'bgmi',
+    slug: 'bgmi',
+    zoneId: 'zone-b',
+    zoneName: 'FUN-ZONE',
+    name: 'BGMI BATTLEGROUNDS CHAMPIONSHIP',
+    shortDescription: 'Ultimate BGMI Battle Royale showdown for tactical gaming squads.',
+    fullDescription: 'Battle for victory in the PLANET-X Battlegrounds Mobile India tournament. Compete in intense custom room matches across Erangel and Miramar.',
+    objectives: [
+      'Dominate the battlegrounds in multi-map squad matches',
+      'Demonstrate squad positioning, utility usage, and sharp entry fragging',
+      'Climb the point table across placement and elimination metrics'
+    ],
+    eligibility: 'Open to all college BGMI squads with active character IDs.',
+    rules: [
+      'Custom room ID and password will be shared via official WhatsApp group 15 mins before match time.',
+      'Squad format (4 players). Mobile devices only (strictly no emulators).',
+      'Hacking, teaming up, or exploiting glitches leads to immediate ban and forfeit.',
+      'Screenshots of end-of-match stats must be submitted by team leader.'
+    ],
+    judgingCriteria: [
+      'Positioning & Placement Points',
+      'Elimination Points'
     ],
     minTeamSize: 1,
     maxTeamSize: 4,
@@ -408,7 +462,7 @@ export const INITIAL_EVENTS: CompetitionEvent[] = [
     whatsappGroupLink: '',
     whatsappVisibility: 'after_confirmation',
     customFields: [
-      { id: 'inGameHandles', label: 'Player Gamer Tags / Handles', placeholder: 'e.g. Leader#1234, Member#5678', required: true }
+      { id: 'bgmiIds', label: 'In-Game Character IDs & IGNs for All Members', placeholder: 'e.g. Leader ID: 512345678, IGN: Soul_Mortal', required: true }
     ]
   },
   {
@@ -491,6 +545,7 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
     photoUrl: '',
     socialLink: 'https://linkedin.com',
     phone: '+91 9975952579',
+    email: 'planetx.event@gmail.com',
     displayOrder: 1
   },
   {
@@ -501,6 +556,7 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
     photoUrl: '',
     socialLink: 'https://linkedin.com',
     phone: '+91 8262058180',
+    email: 'ved.shinde@nmims.edu',
     displayOrder: 2
   },
   {
@@ -511,6 +567,7 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
     photoUrl: '',
     socialLink: 'https://linkedin.com',
     phone: '+91 8412820178',
+    email: 'dakshal.ahire@nmims.edu',
     displayOrder: 3
   },
   {
@@ -521,6 +578,7 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
     photoUrl: '',
     socialLink: 'https://linkedin.com',
     phone: '+91 8080156469',
+    email: 'yash.khairnar@nmims.edu',
     displayOrder: 4
   },
   {
@@ -530,6 +588,8 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
     bio: 'Drives inter-college delegations, community communications, and participant support desks.',
     photoUrl: '',
     socialLink: 'https://linkedin.com',
+    phone: '+91 9876543210',
+    email: 'harsh.pr@nmims.edu',
     displayOrder: 5
   },
   {
@@ -539,6 +599,8 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
     bio: 'Facilitates problem statements, rubric standardization, and technical jury management.',
     photoUrl: '',
     socialLink: 'https://linkedin.com',
+    phone: '+91 9123456789',
+    email: 'herambh.judging@nmims.edu',
     displayOrder: 6
   }
 ];
@@ -546,16 +608,271 @@ export const INITIAL_TEAM_MEMBERS: OrganizingTeamMember[] = [
 // Helper class for atomic DB operations
 class DatabaseManager {
   private db: DatabaseSchema;
+  private isSyncing = false;
+  private lastSyncTime = 0;
 
   constructor() {
     this.db = this.loadDatabase();
+    this.syncFromFirestore(true).catch(err => {
+      console.error('[Firestore] Initial startup sync error:', err);
+    });
+  }
+
+  public async syncFromFirestore(force = false): Promise<DatabaseSchema> {
+    const now = Date.now();
+    if (!firestoreDb || (this.isSyncing || (!force && now - this.lastSyncTime < 2000))) {
+      return this.db;
+    }
+
+    this.isSyncing = true;
+    try {
+      // 1. Fetch specific team_members collection
+      const teamCol = collection(firestoreDb, 'team_members');
+      const teamSnap = await getDocs(teamCol);
+      if (!teamSnap.empty) {
+        const cloudMembers: OrganizingTeamMember[] = [];
+        teamSnap.forEach(docSnap => {
+          const data = docSnap.data() as OrganizingTeamMember;
+          if (data && data.id) {
+            cloudMembers.push(data);
+          }
+        });
+        if (cloudMembers.length > 0) {
+          cloudMembers.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+          this.db.teamMembers = cloudMembers;
+        }
+      }
+
+      // 2. Fetch specific events collection
+      const eventsCol = collection(firestoreDb, 'events');
+      const eventsSnap = await getDocs(eventsCol);
+      if (!eventsSnap.empty) {
+        const cloudEvents: CompetitionEvent[] = [];
+        eventsSnap.forEach(docSnap => {
+          const data = docSnap.data() as CompetitionEvent;
+          if (data && data.id) {
+            cloudEvents.push(data);
+          }
+        });
+        if (cloudEvents.length > 0) {
+          this.db.events = cloudEvents;
+        }
+      }
+
+      // 3. Fetch specific settings document
+      const settingsRef = doc(firestoreDb, 'settings', 'main');
+      const settingsSnap = await getDoc(settingsRef);
+      if (settingsSnap.exists()) {
+        const cloudSettings = settingsSnap.data() as GlobalSettings;
+        if (cloudSettings && cloudSettings.eventName) {
+          this.db.settings = cloudSettings;
+        }
+      }
+
+      // 4. Pull main state (zones, users, registrations, logs)
+      const docRef = doc(firestoreDb, 'app_state', 'main');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const cloudData = snap.data() as DatabaseSchema;
+        if (cloudData) {
+          if (Array.isArray(cloudData.zones) && cloudData.zones.length > 0) this.db.zones = cloudData.zones;
+          if (Array.isArray(cloudData.users)) this.db.users = cloudData.users;
+          if (Array.isArray(cloudData.registrations)) this.db.registrations = cloudData.registrations;
+          if (Array.isArray(cloudData.emailLogs)) this.db.emailLogs = cloudData.emailLogs;
+          if (Array.isArray(cloudData.auditLogs)) this.db.auditLogs = cloudData.auditLogs;
+          if (Array.isArray(cloudData.contactMessages)) this.db.contactMessages = cloudData.contactMessages;
+        }
+      } else {
+        await this.saveToFirestore();
+      }
+
+      this.saveDatabase(this.db);
+      this.lastSyncTime = Date.now();
+      console.log('[Firestore] Synchronized state (team_members, events, settings, app_state) from Cloud Firestore!');
+    } catch (err) {
+      console.error('[Firestore] Error pulling from Cloud Firestore:', err);
+    } finally {
+      this.isSyncing = false;
+    }
+    return this.db;
+  }
+
+  public async saveToFirestore(): Promise<void> {
+    if (!firestoreDb) return;
+    try {
+      // 1. Save team members individually to dedicated collection
+      if (Array.isArray(this.db.teamMembers)) {
+        const currentMemberIds = new Set(this.db.teamMembers.map(m => m.id));
+        
+        // Remove deleted members from team_members collection in Firestore
+        try {
+          const teamCol = collection(firestoreDb, 'team_members');
+          const teamSnap = await getDocs(teamCol);
+          if (!teamSnap.empty) {
+            for (const docSnap of teamSnap.docs) {
+              if (!currentMemberIds.has(docSnap.id)) {
+                await deleteDoc(doc(firestoreDb, 'team_members', docSnap.id));
+              }
+            }
+          }
+        } catch (delErr) {
+          console.error('[Firestore] Error cleaning orphan team_members:', delErr);
+        }
+
+        // Save active team members
+        for (const m of this.db.teamMembers) {
+          if (m && m.id) {
+            const mRef = doc(firestoreDb, 'team_members', m.id);
+            await setDoc(mRef, m, { merge: true });
+          }
+        }
+      }
+
+      // 2. Save events individually to dedicated events collection
+      if (Array.isArray(this.db.events)) {
+        const currentEventIds = new Set(this.db.events.map(e => e.id));
+        try {
+          const eventsCol = collection(firestoreDb, 'events');
+          const eventsSnap = await getDocs(eventsCol);
+          if (!eventsSnap.empty) {
+            for (const docSnap of eventsSnap.docs) {
+              if (!currentEventIds.has(docSnap.id)) {
+                await deleteDoc(doc(firestoreDb, 'events', docSnap.id));
+              }
+            }
+          }
+        } catch (delErr) {
+          console.error('[Firestore] Error cleaning orphan events:', delErr);
+        }
+
+        for (const ev of this.db.events) {
+          if (ev && ev.id) {
+            const evRef = doc(firestoreDb, 'events', ev.id);
+            await setDoc(evRef, ev, { merge: true });
+          }
+        }
+      }
+
+      // 3. Save settings to dedicated settings/main document
+      if (this.db.settings) {
+        const settingsRef = doc(firestoreDb, 'settings', 'main');
+        await setDoc(settingsRef, this.db.settings, { merge: true });
+      }
+
+      // 4. Save individual registrations with proof URLs to registrations collection
+      if (Array.isArray(this.db.registrations)) {
+        for (const reg of this.db.registrations) {
+          if (reg && reg.id) {
+            const regRef = doc(firestoreDb, 'registrations', reg.id);
+            await setDoc(regRef, reg, { merge: true });
+          }
+        }
+      }
+
+      // 5. Save sanitized app_state/main (trimming paymentProofUrl base64 to prevent >1MB single-document limits)
+      const sanitizedDb: DatabaseSchema = {
+        ...this.db,
+        registrations: (this.db.registrations || []).map(r => ({
+          ...r,
+          paymentProofUrl: (r.paymentProofUrl && r.paymentProofUrl.length > 500) ? '[STORED_IN_REGISTRATION_DOC]' : r.paymentProofUrl
+        }))
+      };
+
+      const docRef = doc(firestoreDb, 'app_state', 'main');
+      await setDoc(docRef, sanitizedDb);
+      this.lastSyncTime = Date.now();
+      console.log('[Firestore] Persisted changes synchronously to Cloud Firestore (events, settings, team_members, app_state)!');
+    } catch (err) {
+      console.error('[Firestore] Error persisting to Cloud Firestore:', err);
+    }
+  }
+
+  public async updateAsync(updater: (db: DatabaseSchema) => void): Promise<DatabaseSchema> {
+    updater(this.db);
+    this.saveDatabase(this.db);
+    await this.saveToFirestore();
+    return this.db;
   }
 
   private loadDatabase(): DatabaseSchema {
     try {
       if (fs.existsSync(DB_FILE)) {
-        const data = fs.readFileSync(DB_FILE, 'utf-8');
-        return JSON.parse(data);
+        const raw = fs.readFileSync(DB_FILE, 'utf-8');
+        const parsed: DatabaseSchema = JSON.parse(raw);
+        let updated = false;
+
+        // Auto-migrate legacy 'gaming-competition' into 'free-fire' & 'bgmi'
+        if (parsed.events) {
+          const legacyIndex = parsed.events.findIndex(e => e.id === 'gaming-competition');
+          if (legacyIndex !== -1) {
+            parsed.events.splice(legacyIndex, 1);
+            if (!parsed.events.some(e => e.id === 'free-fire')) {
+              const ff = INITIAL_EVENTS.find(e => e.id === 'free-fire');
+              if (ff) parsed.events.push(ff);
+            }
+            if (!parsed.events.some(e => e.id === 'bgmi')) {
+              const bgmi = INITIAL_EVENTS.find(e => e.id === 'bgmi');
+              if (bgmi) parsed.events.push(bgmi);
+            }
+            updated = true;
+          }
+        }
+
+        if (parsed.zones) {
+          const zoneB = parsed.zones.find(z => z.id === 'zone-b');
+          if (zoneB && zoneB.eventIds.includes('gaming-competition')) {
+            zoneB.eventIds = zoneB.eventIds.filter(id => id !== 'gaming-competition');
+            if (!zoneB.eventIds.includes('free-fire')) zoneB.eventIds.push('free-fire');
+            if (!zoneB.eventIds.includes('bgmi')) zoneB.eventIds.push('bgmi');
+            updated = true;
+          }
+        }
+
+        // Ensure teamMembers is initialized and enriched
+        if (!parsed.teamMembers || !Array.isArray(parsed.teamMembers) || parsed.teamMembers.length === 0) {
+          parsed.teamMembers = INITIAL_TEAM_MEMBERS;
+          updated = true;
+        } else {
+          parsed.teamMembers = parsed.teamMembers.map((m: OrganizingTeamMember, idx: number) => {
+            const init = INITIAL_TEAM_MEMBERS.find(i => i.id === m.id);
+            const enriched: OrganizingTeamMember = {
+              id: m.id || (init ? init.id : `team-${Date.now()}-${idx}`),
+              name: (m.name && m.name.trim()) ? m.name : (init ? init.name : 'Organizer'),
+              role: (m.role && m.role.trim()) ? m.role : (init ? init.role : 'Event Coordinator'),
+              bio: m.bio !== undefined ? m.bio : (init ? init.bio : ''),
+              photoUrl: m.photoUrl !== undefined ? m.photoUrl : (init ? init.photoUrl : ''),
+              socialLink: m.socialLink || (init ? init.socialLink : 'https://linkedin.com'),
+              phone: m.phone !== undefined ? m.phone : (init ? init.phone : ''),
+              email: m.email !== undefined ? m.email : (init ? init.email : ''),
+              displayOrder: typeof m.displayOrder === 'number' ? m.displayOrder : (init ? init.displayOrder : idx + 1)
+            };
+            return enriched;
+          });
+        }
+
+        if (!parsed.settings) {
+          parsed.settings = INITIAL_SETTINGS;
+          updated = true;
+        }
+        if (!parsed.zones || !Array.isArray(parsed.zones) || parsed.zones.length === 0) {
+          parsed.zones = INITIAL_ZONES;
+          updated = true;
+        }
+        if (!parsed.events || !Array.isArray(parsed.events) || parsed.events.length === 0) {
+          parsed.events = INITIAL_EVENTS;
+          updated = true;
+        }
+        if (!parsed.users) parsed.users = [];
+        if (!parsed.registrations) parsed.registrations = [];
+        if (!parsed.emailLogs) parsed.emailLogs = [];
+        if (!parsed.auditLogs) parsed.auditLogs = [];
+        if (!parsed.contactMessages) parsed.contactMessages = [];
+
+        if (updated) {
+          this.saveDatabase(parsed);
+        }
+
+        return parsed;
       }
     } catch (err) {
       console.error('Error reading DB file, reinitializing with defaults:', err);
@@ -592,6 +909,9 @@ class DatabaseManager {
   public update(updater: (db: DatabaseSchema) => void): DatabaseSchema {
     updater(this.db);
     this.saveDatabase(this.db);
+    this.saveToFirestore().catch(err => {
+      console.error('[Firestore] Async background write error:', err);
+    });
     return this.db;
   }
 }

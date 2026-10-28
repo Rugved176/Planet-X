@@ -11,6 +11,7 @@ import {
   ContactMessage
 } from '../types.ts';
 import { api } from '../lib/api.ts';
+import { DelegationTicketModal } from '../components/DelegationTicketModal.tsx';
 import { 
   generateTeamDossierPdf, 
   generateAllRegistrationsMasterPdf, 
@@ -38,7 +39,24 @@ import {
   Layers,
   ChevronRight,
   Send,
-  Check
+  Check,
+  Plus,
+  Trash2,
+  Save,
+  Sparkles,
+  ExternalLink,
+  Lock,
+  Unlock,
+  Calendar,
+  DollarSign,
+  Award,
+  BookOpen,
+  ListChecks,
+  User,
+  Phone,
+  Image as ImageIcon,
+  Ticket,
+  X
 } from 'lucide-react';
 
 interface AdminDashboardPageProps {
@@ -86,15 +104,65 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [reviewingReg, setReviewingReg] = useState<Registration | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [editingTicketReg, setEditingTicketReg] = useState<Registration | null>(null);
 
   // Email preview modal
   const [previewingEmail, setPreviewingEmail] = useState<EmailLog | null>(null);
 
   // Editing event modal
   const [editingEvent, setEditingEvent] = useState<CompetitionEvent | null>(null);
+  const [isCreatingEvent, setIsCreatingEvent] = useState<boolean>(false);
+  const [showBatchFeeManager, setShowBatchFeeManager] = useState<boolean>(false);
+  const [eventSearchTerm, setEventSearchTerm] = useState<string>('');
+  const [eventZoneFilter, setEventZoneFilter] = useState<string>('all');
+  const [batchFeesMap, setBatchFeesMap] = useState<Record<string, number>>({});
+  const [savingBatchFees, setSavingBatchFees] = useState<boolean>(false);
+  const [eventActionNotice, setEventActionNotice] = useState<string | null>(null);
 
-  // Editing team member modal
+  // New event form state
+  const [newEventForm, setNewEventForm] = useState<Partial<CompetitionEvent>>({
+    name: '',
+    zoneId: 'zone-a',
+    shortDescription: '',
+    fullDescription: '',
+    registrationFee: 150,
+    minTeamSize: 1,
+    maxTeamSize: 2,
+    registrationDeadline: '2026-11-18T23:59:59',
+    isOpen: true,
+    whatsappGroupLink: '',
+    whatsappVisibility: 'after_submission',
+    eligibility: 'Open to all undergraduate and postgraduate students with a valid institution ID.',
+    rules: [
+      'Original work and development required during the competition window.',
+      'Open-source libraries and public frameworks are permitted with proper attribution.',
+      'Judges decisions regarding scoring rubrics and podium allocations are final and binding.'
+    ],
+    judgingCriteria: [
+      'Technical Execution & Architecture (35%)',
+      'Innovation & Practical Feasibility (35%)',
+      'Presentation, Visual Design & Q&A Defense (30%)'
+    ],
+    objectives: [
+      'Architect a working project prototype addressing the official challenge theme',
+      'Demonstrate clean code structure and real-world utility',
+      'Present solution to technical evaluation jury'
+    ],
+    allowedTech: ['React', 'TypeScript', 'Node.js', 'Python']
+  });
+
+  // Editing & creating team member modal state
   const [editingMember, setEditingMember] = useState<OrganizingTeamMember | null>(null);
+  const [isCreatingMember, setIsCreatingMember] = useState(false);
+  const [newMemberData, setNewMemberData] = useState<Partial<OrganizingTeamMember>>({
+    name: '',
+    role: 'Event Organizer',
+    email: '',
+    phone: '',
+    bio: '',
+    photoUrl: '',
+    socialLink: 'https://linkedin.com'
+  });
 
   // QR Code upload
   const [qrFileBase64, setQrFileBase64] = useState<string>('');
@@ -144,6 +212,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     loadAllData();
   }, [filterZone, filterEvent, filterPayment, filterRegStatus, searchQuery]);
 
+  useEffect(() => {
+    if (initialTeamMembers) {
+      setTeamList(initialTeamMembers);
+    }
+  }, [initialTeamMembers]);
+
+  useEffect(() => {
+    if (initialEvents) {
+      setEvents(initialEvents);
+    }
+  }, [initialEvents]);
+
+  useEffect(() => {
+    if (initialSettings) {
+      setSettings(initialSettings);
+    }
+  }, [initialSettings]);
+
   if (!isAdmin) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center text-slate-100">
@@ -172,17 +258,94 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     }
   };
 
-  // Handle Save Event Config
+  // Handle Save Event Config (Full Details)
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent) return;
     try {
-      await api.updateEvent(editingEvent.id, editingEvent);
+      const res = await api.updateEvent(editingEvent.id, editingEvent);
+      if (res.success && res.event) {
+        setEvents((prev) => prev.map((ev) => (ev.id === res.event.id ? res.event : ev)));
+      }
       setEditingEvent(null);
+      setEventActionNotice(`Competition "${editingEvent.name}" details and fees successfully updated!`);
+      setTimeout(() => setEventActionNotice(null), 4000);
       onRefreshConfig();
       loadAllData();
     } catch (err: any) {
       alert(err.message || 'Failed to update event configuration');
+    }
+  };
+
+  // Handle Create New Competition
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventForm.name || !newEventForm.name.trim()) {
+      alert('Please enter a competition name.');
+      return;
+    }
+    try {
+      const res = await api.createEvent(newEventForm);
+      if (res.success && res.event) {
+        setEvents((prev) => [...prev, res.event]);
+      }
+      setIsCreatingEvent(false);
+      setEventActionNotice(`New Competition "${newEventForm.name}" created successfully!`);
+      setTimeout(() => setEventActionNotice(null), 4000);
+      onRefreshConfig();
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to create new competition');
+    }
+  };
+
+  // Handle Delete Competition
+  const handleDeleteEvent = async (eventId: string, eventName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${eventName}"? This will remove it from all portal views.`)) {
+      return;
+    }
+    try {
+      await api.deleteEvent(eventId);
+      setEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+      setEventActionNotice(`Event "${eventName}" has been deleted.`);
+      setTimeout(() => setEventActionNotice(null), 4000);
+      onRefreshConfig();
+      loadAllData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete event');
+    }
+  };
+
+  // Handle Quick Toggle Event Status (Open / Closed)
+  const handleToggleEventStatus = async (ev: CompetitionEvent) => {
+    try {
+      const updated = { ...ev, isOpen: !ev.isOpen };
+      await api.updateEvent(ev.id, { isOpen: !ev.isOpen });
+      setEvents((prev) => prev.map((item) => (item.id === ev.id ? updated : item)));
+      setEventActionNotice(`Event "${ev.name}" registration is now ${!ev.isOpen ? 'OPEN' : 'LOCKED'}.`);
+      setTimeout(() => setEventActionNotice(null), 3000);
+      onRefreshConfig();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update event status');
+    }
+  };
+
+  // Handle Batch Save Fees
+  const handleBatchSaveFees = async () => {
+    setSavingBatchFees(true);
+    try {
+      const res = await api.batchUpdateFees(batchFeesMap);
+      if (res.success && res.events) {
+        setEvents(res.events);
+      }
+      setShowBatchFeeManager(false);
+      setEventActionNotice('All competition fees updated successfully across the platform!');
+      setTimeout(() => setEventActionNotice(null), 4000);
+      onRefreshConfig();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update batch fees');
+    } finally {
+      setSavingBatchFees(false);
     }
   };
 
@@ -214,6 +377,44 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       onRefreshConfig();
     } catch (err: any) {
       alert(err.message || 'Failed to update team member profile');
+    }
+  };
+
+  const handleCreateMemberSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemberData.name?.trim()) {
+      alert('Organizer Name is required.');
+      return;
+    }
+    try {
+      const res = await api.createTeamMember(newMemberData);
+      setTeamList(res.teamMembers);
+      setIsCreatingMember(false);
+      setNewMemberData({
+        name: '',
+        role: 'Event Organizer',
+        email: '',
+        phone: '',
+        bio: '',
+        photoUrl: '',
+        socialLink: 'https://linkedin.com'
+      });
+      onRefreshConfig();
+    } catch (err: any) {
+      alert(err.message || 'Failed to create team member.');
+    }
+  };
+
+  const handleDeleteMember = async (memberId: string, memberName: string) => {
+    if (!window.confirm(`Are you sure you want to remove "${memberName}" from the organizing committee?`)) {
+      return;
+    }
+    try {
+      const res = await api.deleteTeamMember(memberId);
+      setTeamList(res.teamMembers);
+      onRefreshConfig();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete team member.');
     }
   };
 
@@ -554,6 +755,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               type="button"
+                              onClick={() => setEditingTicketReg(r)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 transition-colors flex items-center gap-1 shadow-sm"
+                              title="View, Edit, or Resend Official Delegation Ticket Pass"
+                            >
+                              <Ticket className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Pass & Ticket</span>
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => generateTeamDossierPdf(r, events.find(e => e.id === r.eventId), zones, settings)}
                               className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 hover:text-white bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-700/60 transition-colors flex items-center gap-1 shadow-sm"
                               title="Download complete delegation PDF dossier with roster and payment slip"
@@ -568,7 +778,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                               }}
                               className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 transition-colors"
                             >
-                              Review & Details
+                              Review
                             </button>
                           </div>
                         </td>
@@ -751,70 +961,311 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         </div>
       )}
 
-      {/* TAB 3: COMPETITIONS & FEES CONFIGURATION */}
-      {activeTab === 'events' && (
-        <div className="space-y-6">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
-            <span>
-              Configure entry fees, team-size minimums & maximums, WhatsApp invite URLs, and registration open/closed states.
-            </span>
-          </div>
+      {/* TAB 3: COMPETITIONS & FEES MANAGEMENT HUB */}
+      {activeTab === 'events' && (() => {
+        const filteredEvents = events.filter((ev) => {
+          const matchesZone = eventZoneFilter === 'all' || ev.zoneId === eventZoneFilter;
+          const matchesSearch =
+            !eventSearchTerm ||
+            ev.name.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+            ev.zoneName.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+            (ev.shortDescription && ev.shortDescription.toLowerCase().includes(eventSearchTerm.toLowerCase()));
+          return matchesZone && matchesSearch;
+        });
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {events.map((ev) => (
-              <div
-                key={ev.id}
-                className="p-6 rounded-2xl bg-[#0b1126] border border-slate-800 space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-mono text-cyan-400 uppercase">{ev.zoneName}</span>
-                    <h3 className="text-xl font-bold font-display text-white">{ev.name}</h3>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${ev.isOpen ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'}`}>
-                    {ev.isOpen ? 'ACTIVE' : 'LOCKED'}
+        return (
+          <div className="space-y-6">
+            {/* Top Action Notification Toast */}
+            {eventActionNotice && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-300 flex items-center justify-between shadow-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  <span>{eventActionNotice}</span>
+                </div>
+                <button onClick={() => setEventActionNotice(null)} className="text-emerald-400 hover:text-white">✕</button>
+              </div>
+            )}
+
+            {/* Header Control Banner */}
+            <div className="p-6 rounded-2xl bg-[#0b1126] border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono tracking-widest text-cyan-400 uppercase font-bold">
+                    EVENT CONFIGURATION CENTER
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-mono">
+                    {events.length} Events Total
                   </span>
                 </div>
+                <h2 className="text-xl sm:text-2xl font-bold font-display text-white">
+                  Competitions & Fees Master Control
+                </h2>
+                <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+                  Update registration fees, rules, team squad limits, WhatsApp invite URLs, and zone allocations for all competitions live on the portal.
+                </p>
+              </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 block">Fee</span>
-                    <span className="font-bold text-cyan-300">₹{ev.registrationFee}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 block">Team Limits</span>
-                    <span className="font-bold text-white">{ev.minTeamSize}-{ev.maxTeamSize}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 block">Deadline</span>
-                    <span className="font-medium text-slate-300 truncate block">
-                      {new Date(ev.registrationDeadline).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
-                  <span className="text-[10px] text-slate-500 block mb-1">WhatsApp Group URL:</span>
-                  <p className="font-mono text-slate-300 truncate">
-                    {ev.whatsappGroupLink || 'Not provided yet'}
-                  </p>
-                  <span className="text-[10px] text-cyan-400 block mt-1">
-                    Visibility: {ev.whatsappVisibility === 'after_submission' ? 'Visible immediately upon registration' : 'Visible only after payment verified'}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  onClick={() => {
+                    const currentMap: Record<string, number> = {};
+                    events.forEach(e => { currentMap[e.id] = e.registrationFee; });
+                    setBatchFeesMap(currentMap);
+                    setShowBatchFeeManager(!showBatchFeeManager);
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+                    showBatchFeeManager
+                      ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-md font-bold'
+                      : 'bg-slate-900 hover:bg-slate-800 text-amber-300 border-amber-400/30'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  <span>{showBatchFeeManager ? 'Close Fee Matrix' : 'Quick Fee Matrix'}</span>
+                </button>
 
                 <button
-                  onClick={() => setEditingEvent({ ...ev })}
-                  className="w-full py-2 rounded-xl text-xs font-semibold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 transition-colors flex items-center justify-center gap-1.5"
+                  onClick={() => setIsCreatingEvent(true)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all shadow-md flex items-center gap-1.5"
                 >
-                  <Edit className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Edit Event Parameters</span>
+                  <Plus className="w-4 h-4" />
+                  <span>Add New Competition</span>
                 </button>
               </div>
-            ))}
+            </div>
+
+            {/* QUICK BATCH FEES MATRIX TABLE */}
+            {showBatchFeeManager && (
+              <div className="p-6 rounded-2xl bg-slate-950 border border-amber-500/30 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="text-sm font-bold text-amber-300 flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-amber-400" />
+                      Batch Competition Fees Matrix
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Adjust fees for multiple events simultaneously and apply in one click.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleBatchSaveFees}
+                    disabled={savingBatchFees}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{savingBatchFees ? 'Saving Changes...' : 'Save All Fees Across Platform'}</span>
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400 uppercase font-mono text-[10px]">
+                        <th className="py-2.5 px-3">Competition</th>
+                        <th className="py-2.5 px-3">Zone Track</th>
+                        <th className="py-2.5 px-3">Squad Limits</th>
+                        <th className="py-2.5 px-3">Current Fee</th>
+                        <th className="py-2.5 px-3">Updated Fee (₹)</th>
+                        <th className="py-2.5 px-3">Registration Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 font-sans">
+                      {events.map((ev) => (
+                        <tr key={ev.id} className="hover:bg-slate-900/40">
+                          <td className="py-2.5 px-3 font-semibold text-white">{ev.name}</td>
+                          <td className="py-2.5 px-3">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 border border-slate-800 text-cyan-300">
+                              {ev.zoneName}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-400">{ev.minTeamSize} - {ev.maxTeamSize} Members</td>
+                          <td className="py-2.5 px-3 text-slate-400 font-mono">₹{ev.registrationFee}</td>
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-1">
+                              <span className="text-slate-500 font-mono text-xs">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={batchFeesMap[ev.id] ?? ev.registrationFee}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  setBatchFeesMap((prev) => ({ ...prev, [ev.id]: val }));
+                                }}
+                                className="w-24 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-amber-300 font-mono font-bold text-xs focus:border-amber-400 focus:outline-none"
+                              />
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <button
+                              onClick={() => handleToggleEventStatus(ev)}
+                              className={`px-2.5 py-1 rounded text-[10px] font-mono font-bold flex items-center gap-1 transition-all ${
+                                ev.isOpen
+                                  ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                                  : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30'
+                              }`}
+                            >
+                              {ev.isOpen ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                              <span>{ev.isOpen ? 'OPEN' : 'LOCKED'}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Search competition by name or rules..."
+                  value={eventSearchTerm}
+                  onChange={(e) => setEventSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              {/* Zone Filter Buttons */}
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+                {[
+                  { id: 'all', label: `All (${events.length})` },
+                  { id: 'zone-a', label: 'Zone A: Code-Zone' },
+                  { id: 'zone-b', label: 'Zone B: Fun-Zone' },
+                  { id: 'zone-c', label: 'Zone C: Fin-Tech' }
+                ].map((z) => (
+                  <button
+                    key={z.id}
+                    onClick={() => setEventZoneFilter(z.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                      eventZoneFilter === z.id
+                        ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    {z.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Events Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredEvents.map((ev) => {
+                const isZoneA = ev.zoneId === 'zone-a';
+                const isZoneB = ev.zoneId === 'zone-b';
+
+                return (
+                  <div
+                    key={ev.id}
+                    className="p-5 rounded-2xl bg-[#0b1126] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all shadow-lg"
+                  >
+                    <div>
+                      {/* Top Badges */}
+                      <div className="flex items-center justify-between mb-3">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase ${
+                            isZoneA
+                              ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30'
+                              : isZoneB
+                              ? 'bg-purple-500/10 text-purple-300 border border-purple-500/30'
+                              : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                          }`}
+                        >
+                          {ev.zoneName || ev.zoneId.toUpperCase()}
+                        </span>
+
+                        <button
+                          onClick={() => handleToggleEventStatus(ev)}
+                          title="Click to toggle registration open/locked"
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 transition-all ${
+                            ev.isOpen
+                              ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                              : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                          }`}
+                        >
+                          {ev.isOpen ? <Unlock className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
+                          <span>{ev.isOpen ? 'ACTIVE' : 'LOCKED'}</span>
+                        </button>
+                      </div>
+
+                      {/* Title & Short Description */}
+                      <h3 className="text-lg font-bold font-display text-white mb-1.5">{ev.name}</h3>
+                      <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed">
+                        {ev.shortDescription || ev.fullDescription?.slice(0, 90) || 'Competition details active.'}
+                      </p>
+
+                      {/* Key Parameters Cards */}
+                      <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                          <span className="text-[10px] text-slate-500 uppercase font-mono block">Entry Fee</span>
+                          <span className="text-base font-black font-mono text-cyan-300">₹{ev.registrationFee}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                          <span className="text-[10px] text-slate-500 uppercase font-mono block">Team Size</span>
+                          <span className="text-xs font-bold text-white block mt-0.5">{ev.minTeamSize} - {ev.maxTeamSize} Members</span>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-400 space-y-1 mb-4">
+                        <div className="flex justify-between text-[11px]">
+                          <span>Deadline:</span>
+                          <span className="text-slate-300 font-mono">
+                            {new Date(ev.registrationDeadline).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-[11px]">
+                          <span>Rules Count:</span>
+                          <span className="text-slate-300">{ev.rules?.length || 0} Listed</span>
+                        </div>
+                        <div className="flex justify-between text-[11px]">
+                          <span>Judging Rubrics:</span>
+                          <span className="text-slate-300">{ev.judgingCriteria?.length || 0} Criteria</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] truncate">
+                          <span>WhatsApp:</span>
+                          <span className="text-slate-300 font-mono truncate max-w-[140px]">
+                            {ev.whatsappGroupLink ? 'Connected' : 'Not Set'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                      <button
+                        onClick={() => setEditingEvent({ ...ev })}
+                        className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all flex items-center justify-center gap-1.5 shadow"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        <span>Edit Full Details & Fees</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteEvent(ev.id, ev.name)}
+                        title="Delete competition"
+                        className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredEvents.length === 0 && (
+              <div className="p-12 text-center rounded-2xl bg-slate-950 border border-slate-800">
+                <AlertCircle className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+                <h4 className="text-sm font-bold text-white">No competitions match your search or filter</h4>
+                <p className="text-xs text-slate-400 mt-1">Try switching to &quot;All Tracks&quot; or clearing your search term.</p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* TAB 4: EVENT & PAYMENT CONFIGURATION */}
       {activeTab === 'settings' && (
@@ -947,41 +1398,81 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       {/* TAB 5: ORGANIZING TEAM MEMBERS */}
       {activeTab === 'team' && (
         <div className="space-y-6">
-          <p className="text-xs text-slate-400">
-            Configure official responsibilities, biographies, photographs, and LinkedIn profiles for the six organizers.
-          </p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+            <div>
+              <h3 className="text-sm font-bold text-white font-display">Organizing Committee Management</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Update names, roles, official email addresses, mobile numbers, photos, and social profiles.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCreatingMember(true)}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all flex items-center gap-1.5 shadow-md shrink-0 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Organizer</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {teamList.map((m) => (
               <div
                 key={m.id}
-                className="p-6 rounded-2xl bg-[#0b1126] border border-slate-800 space-y-4"
+                className="p-6 rounded-2xl bg-[#0b1126] border border-slate-800 space-y-4 relative flex flex-col justify-between shadow-lg"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-600 to-violet-600 flex items-center justify-center text-white font-bold text-lg overflow-hidden shrink-0">
-                    {m.photoUrl ? (
-                      <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{m.name.charAt(0)}</span>
-                    )}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-violet-600 flex items-center justify-center text-white font-bold text-xl overflow-hidden shrink-0 border border-cyan-500/30 shadow-md">
+                      {m.photoUrl ? (
+                        <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{m.name.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-base font-bold text-white truncate">{m.name}</h4>
+                      <p className="text-xs font-mono text-cyan-400 truncate">{m.role}</p>
+                      {m.phone && (
+                        <p className="text-[11px] text-slate-300 flex items-center gap-1 mt-0.5">
+                          <Phone className="w-3 h-3 text-emerald-400 shrink-0" />
+                          <a href={`tel:${m.phone}`} className="hover:underline font-mono">{m.phone}</a>
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="text-base font-bold text-white truncate">{m.name}</h4>
-                    <p className="text-xs font-mono text-cyan-400 truncate">{m.role}</p>
-                  </div>
+
+                  {m.email && (
+                    <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-300 flex items-center gap-1.5 truncate">
+                      <Mail className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <a href={`mailto:${m.email}`} className="text-cyan-300 hover:underline font-mono truncate">{m.email}</a>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed">
+                    {m.bio || 'No biography provided.'}
+                  </p>
                 </div>
 
-                <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed">
-                  {m.bio}
-                </p>
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setEditingMember({ ...m })}
+                    className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Edit Profile & Photo</span>
+                  </button>
 
-                <button
-                  onClick={() => setEditingMember({ ...m })}
-                  className="w-full py-2 rounded-xl text-xs font-semibold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Edit className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Edit Profile & Photo</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMember(m.id, m.name)}
+                    className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900/60 transition-colors cursor-pointer"
+                    title="Remove Organizer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -1246,97 +1737,461 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         </div>
       )}
 
-      {/* MODAL: Edit Event Parameters */}
+      {/* MODAL: Edit Full Event Details & Fees */}
       {editingEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-2xl bg-[#0b1126] border border-slate-700 rounded-2xl shadow-2xl p-6 sm:p-8 my-8 text-slate-100">
-            <h3 className="text-xl font-bold font-display text-white mb-4">
-              Configure {editingEvent.name}
-            </h3>
+          <div className="relative w-full max-w-3xl bg-[#0b1126] border border-slate-700 rounded-2xl shadow-2xl p-6 sm:p-8 my-8 text-slate-100 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800 mb-6">
+              <div>
+                <span className="text-[10px] font-mono text-cyan-400 tracking-wider uppercase font-bold">
+                  EDIT COMPETITION PARAMETERS
+                </span>
+                <h3 className="text-xl sm:text-2xl font-bold font-display text-white mt-0.5">
+                  Configure {editingEvent.name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setEditingEvent(null)}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
 
-            <form onSubmit={handleSaveEvent} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSaveEvent} className="space-y-6 text-xs">
+              {/* SECTION 1: ESSENTIAL DETAILS */}
+              <div className="space-y-3">
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block border-l-2 border-cyan-400 pl-2">
+                  1. Essential Info & Allocation
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">Competition Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingEvent.name}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, name: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-medium focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">Zone Track Allocation *</label>
+                    <select
+                      value={editingEvent.zoneId}
+                      onChange={(e) => {
+                        const zid = e.target.value;
+                        const zObj = zones.find(z => z.id === zid);
+                        setEditingEvent({
+                          ...editingEvent,
+                          zoneId: zid,
+                          zoneName: zObj ? zObj.name : editingEvent.zoneName
+                        });
+                      }}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                    >
+                      <option value="zone-a">ZONE A: CODE-ZONE</option>
+                      <option value="zone-b">ZONE B: FUN-ZONE</option>
+                      <option value="zone-c">ZONE C: FIN-TECH</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">Registration Fee (₹) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      required
+                      value={editingEvent.registrationFee}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, registrationFee: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-mono font-bold focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">Min Squad Size</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingEvent.minTeamSize}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, minTeamSize: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">Max Squad Size</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingEvent.maxTeamSize}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, maxTeamSize: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">Registration Status</label>
+                    <select
+                      value={editingEvent.isOpen ? 'open' : 'closed'}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, isOpen: e.target.value === 'open' })}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none font-semibold"
+                    >
+                      <option value="open">Active (Open)</option>
+                      <option value="closed">Locked (Closed)</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-slate-400 mb-1">Registration Fee (₹)</label>
+                  <label className="block text-slate-400 mb-1 font-semibold">Registration Deadline</label>
                   <input
-                    type="number"
-                    value={editingEvent.registrationFee}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, registrationFee: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono"
+                    type="text"
+                    placeholder="YYYY-MM-DDTHH:mm:ss"
+                    value={editingEvent.registrationDeadline}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, registrationDeadline: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 font-mono focus:border-cyan-400 focus:outline-none"
                   />
                 </div>
+              </div>
+
+              {/* SECTION 2: DESCRIPTIONS & ELIGIBILITY */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block border-l-2 border-indigo-400 pl-2">
+                  2. Descriptions & Eligibility
+                </span>
+
                 <div>
-                  <label className="block text-slate-400 mb-1">Portal Registration Status</label>
-                  <select
-                    value={editingEvent.isOpen ? 'open' : 'closed'}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, isOpen: e.target.value === 'open' })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
+                  <label className="block text-slate-400 mb-1 font-semibold">Short Catchy Description (Card overview)</label>
+                  <input
+                    type="text"
+                    value={editingEvent.shortDescription || ''}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, shortDescription: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Full Competition Description</label>
+                  <textarea
+                    rows={3}
+                    value={editingEvent.fullDescription || ''}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, fullDescription: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Eligibility Criteria</label>
+                  <input
+                    type="text"
+                    value={editingEvent.eligibility || ''}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, eligibility: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* SECTION 3: RULES & GUIDELINES */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block border-l-2 border-emerald-400 pl-2">
+                    3. Rules & Guidelines ({editingEvent.rules?.length || 0})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentRules = editingEvent.rules || [];
+                      setEditingEvent({ ...editingEvent, rules: [...currentRules, ''] });
+                    }}
+                    className="px-2.5 py-1 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-cyan-300 flex items-center gap-1"
                   >
-                    <option value="open">Open for Submissions</option>
-                    <option value="closed">Closed / Locked</option>
-                  </select>
+                    <Plus className="w-3 h-3" />
+                    <span>Add Rule</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {(editingEvent.rules || []).map((rule, rIdx) => (
+                    <div key={rIdx} className="flex items-center gap-2">
+                      <span className="text-slate-500 font-mono text-xs w-5">{rIdx + 1}.</span>
+                      <input
+                        type="text"
+                        value={rule}
+                        onChange={(e) => {
+                          const newRules = [...(editingEvent.rules || [])];
+                          newRules[rIdx] = e.target.value;
+                          setEditingEvent({ ...editingEvent, rules: newRules });
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-white focus:border-cyan-400 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newRules = (editingEvent.rules || []).filter((_, i) => i !== rIdx);
+                          setEditingEvent({ ...editingEvent, rules: newRules });
+                        }}
+                        className="p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 mb-1">Min Squad Members</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={editingEvent.minTeamSize}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, minTeamSize: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono"
-                  />
+              {/* SECTION 4: JUDGING CRITERIA */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block border-l-2 border-amber-400 pl-2">
+                    4. Judging Criteria & Weightage ({editingEvent.judgingCriteria?.length || 0})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = editingEvent.judgingCriteria || [];
+                      setEditingEvent({ ...editingEvent, judgingCriteria: [...current, ''] });
+                    }}
+                    className="px-2.5 py-1 rounded-md text-[11px] bg-slate-800 hover:bg-slate-700 text-cyan-300 flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add Criteria</span>
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-slate-400 mb-1">Max Squad Members</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={editingEvent.maxTeamSize}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, maxTeamSize: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono"
-                  />
+
+                <div className="space-y-2">
+                  {(editingEvent.judgingCriteria || []).map((crit, cIdx) => (
+                    <div key={cIdx} className="flex items-center gap-2">
+                      <span className="text-slate-500 font-mono text-xs w-5">{cIdx + 1}.</span>
+                      <input
+                        type="text"
+                        value={crit}
+                        placeholder="e.g. Technical Innovation (40%)"
+                        onChange={(e) => {
+                          const newCrit = [...(editingEvent.judgingCriteria || [])];
+                          newCrit[cIdx] = e.target.value;
+                          setEditingEvent({ ...editingEvent, judgingCriteria: newCrit });
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-white focus:border-cyan-400 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newCrit = (editingEvent.judgingCriteria || []).filter((_, i) => i !== cIdx);
+                          setEditingEvent({ ...editingEvent, judgingCriteria: newCrit });
+                        }}
+                        className="p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-400 mb-1">WhatsApp Group Invite Link</label>
-                <input
-                  type="url"
-                  placeholder="https://chat.whatsapp.com/..."
-                  value={editingEvent.whatsappGroupLink || ''}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, whatsappGroupLink: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono"
-                />
+              {/* SECTION 5: WHATSAPP GROUP & COMMUNICATION */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block border-l-2 border-emerald-500 pl-2">
+                  5. Participant Community WhatsApp Link
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">WhatsApp Invite URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://chat.whatsapp.com/..."
+                      value={editingEvent.whatsappGroupLink || ''}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, whatsappGroupLink: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-semibold">Visibility Policy</label>
+                    <select
+                      value={editingEvent.whatsappVisibility}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, whatsappVisibility: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                    >
+                      <option value="after_submission">Visible immediately after registration submission</option>
+                      <option value="after_confirmation">Visible only after payment verified & confirmed</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-slate-400 mb-1">WhatsApp Visibility Policy</label>
-                <select
-                  value={editingEvent.whatsappVisibility}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, whatsappVisibility: e.target.value as any })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
-                >
-                  <option value="after_submission">Visible immediately after registration submission</option>
-                  <option value="after_confirmation">Visible only after payment verification and confirmation</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setEditingEvent(null)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300"
+                  className="px-6 py-2.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all shadow-lg flex items-center gap-1.5"
                 >
-                  Save Changes
+                  <Save className="w-4 h-4" />
+                  <span>Save All Changes to Live Website</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Create New Competition */}
+      {isCreatingEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-[#0b1126] border border-cyan-500/40 rounded-2xl shadow-2xl p-6 sm:p-8 my-8 text-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800 mb-6">
+              <div>
+                <span className="text-[10px] font-mono text-cyan-400 tracking-wider uppercase font-bold">
+                  PORTAL CONFIGURATION
+                </span>
+                <h3 className="text-xl sm:text-2xl font-bold font-display text-white mt-0.5">
+                  Add New Competition
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsCreatingEvent(false)}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEvent} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Competition Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. AI Prompt Verse"
+                    value={newEventForm.name || ''}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Zone Track *</label>
+                  <select
+                    value={newEventForm.zoneId}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, zoneId: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  >
+                    <option value="zone-a">ZONE A: CODE-ZONE</option>
+                    <option value="zone-b">ZONE B: FUN-ZONE</option>
+                    <option value="zone-c">ZONE C: FIN-TECH</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Registration Fee (₹) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={newEventForm.registrationFee}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, registrationFee: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-mono font-bold focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Min Squad Size</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newEventForm.minTeamSize}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, minTeamSize: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Max Squad Size</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newEventForm.maxTeamSize}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, maxTeamSize: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Short Catchy Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rapid-fire generative AI prompt engineering challenges."
+                  value={newEventForm.shortDescription || ''}
+                  onChange={(e) => setNewEventForm({ ...newEventForm, shortDescription: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Full Competition Details</label>
+                <textarea
+                  rows={3}
+                  placeholder="Comprehensive event details, format, and structure."
+                  value={newEventForm.fullDescription || ''}
+                  onChange={(e) => setNewEventForm({ ...newEventForm, fullDescription: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">WhatsApp Group Invite URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://chat.whatsapp.com/..."
+                    value={newEventForm.whatsappGroupLink || ''}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, whatsappGroupLink: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Eligibility</label>
+                  <input
+                    type="text"
+                    value={newEventForm.eligibility || ''}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, eligibility: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingEvent(false)}
+                  className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all shadow-lg flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Publish New Competition</span>
                 </button>
               </div>
             </form>
@@ -1346,67 +2201,386 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
       {/* MODAL: Edit Team Member */}
       {editingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-lg bg-[#0b1126] border border-slate-700 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100">
-            <h3 className="text-xl font-bold font-display text-white mb-4">
-              Edit Organizer Profile: {editingMember.name}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#0b1126] border border-slate-700 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100 my-8">
+            <button
+              type="button"
+              onClick={() => setEditingMember(null)}
+              className="absolute top-5 right-5 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold font-display text-white mb-4 flex items-center gap-2">
+              <User className="w-5 h-5 text-cyan-400" />
+              <span>Edit Organizer Profile</span>
             </h3>
 
             <form onSubmit={handleSaveMember} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1">Organizer Role</label>
-                <input
-                  type="text"
-                  value={editingMember.role}
-                  onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingMember.name}
+                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Official Role / Designation *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingMember.role}
+                    onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="organizer@nmims.edu"
+                    value={editingMember.email || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Mobile Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+91 9876543210"
+                    value={editingMember.phone || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Short Biography</label>
+                <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  Biography & Responsibilities
+                </label>
                 <textarea
                   rows={3}
                   value={editingMember.bio}
                   onChange={(e) => setEditingMember({ ...editingMember, bio: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white resize-none"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">LinkedIn / Social URL</label>
+                <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  LinkedIn / Social Profile URL
+                </label>
                 <input
                   type="url"
                   value={editingMember.socialLink}
                   onChange={(e) => setEditingMember({ ...editingMember, socialLink: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-400 mb-1">Profile Photo (Image URL or Data URI)</label>
-                <input
-                  type="text"
-                  placeholder="https://... or data:image/..."
-                  value={editingMember.photoUrl}
-                  onChange={(e) => setEditingMember({ ...editingMember, photoUrl: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono"
-                />
+              {/* Photo Upload & Preview */}
+              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <label className="block font-semibold text-slate-300 uppercase tracking-wider">
+                  Organizer Profile Photo
+                </label>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-slate-400 shadow-md">
+                    {editingMember.photoUrl ? (
+                      <img src={editingMember.photoUrl} alt="Photo preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-500" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-slate-700 cursor-pointer transition-colors shadow-sm">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Choose Photo File</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const MAX_SIZE = 400;
+                                let width = img.width;
+                                let height = img.height;
+                                if (width > height) {
+                                  if (width > MAX_SIZE) {
+                                    height = Math.round(height * (MAX_SIZE / width));
+                                    width = MAX_SIZE;
+                                  }
+                                } else {
+                                  if (height > MAX_SIZE) {
+                                    width = Math.round(width * (MAX_SIZE / height));
+                                    height = MAX_SIZE;
+                                  }
+                                }
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                if (ctx) {
+                                  ctx.drawImage(img, 0, 0, width, height);
+                                  setEditingMember({ ...editingMember, photoUrl: canvas.toDataURL('image/jpeg', 0.85) });
+                                } else {
+                                  setEditingMember({ ...editingMember, photoUrl: event.target?.result as string });
+                                }
+                              };
+                              img.src = event.target?.result as string;
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <input
+                      type="text"
+                      placeholder="Or paste Image URL / Data URI..."
+                      value={editingMember.photoUrl}
+                      onChange={(e) => setEditingMember({ ...editingMember, photoUrl: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-white font-mono focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300"
+                  className="px-5 py-2 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all shadow-lg"
                 >
-                  Update Profile
+                  Save Organizer Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Add New Team Member */}
+      {isCreatingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#0b1126] border border-slate-700 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100 my-8">
+            <button
+              type="button"
+              onClick={() => setIsCreatingMember(false)}
+              className="absolute top-5 right-5 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold font-display text-white mb-4 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-cyan-400" />
+              <span>Add New Organizing Member</span>
+            </h3>
+
+            <form onSubmit={handleCreateMemberSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ananya Roy"
+                    value={newMemberData.name || ''}
+                    onChange={(e) => setNewMemberData({ ...newMemberData, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Role / Designation *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Technical Coordinator"
+                    value={newMemberData.role || ''}
+                    onChange={(e) => setNewMemberData({ ...newMemberData, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="ananya@nmims.edu"
+                    value={newMemberData.email || ''}
+                    onChange={(e) => setNewMemberData({ ...newMemberData, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Mobile Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+91 9876543210"
+                    value={newMemberData.phone || ''}
+                    onChange={(e) => setNewMemberData({ ...newMemberData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  Biography
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Responsibilities and domain background..."
+                  value={newMemberData.bio || ''}
+                  onChange={(e) => setNewMemberData({ ...newMemberData, bio: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  LinkedIn / Social Profile URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://linkedin.com/in/..."
+                  value={newMemberData.socialLink || ''}
+                  onChange={(e) => setNewMemberData({ ...newMemberData, socialLink: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              {/* Photo Upload & Preview */}
+              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <label className="block font-semibold text-slate-300 uppercase tracking-wider">
+                  Organizer Profile Photo
+                </label>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-slate-400 shadow-md">
+                    {newMemberData.photoUrl ? (
+                      <img src={newMemberData.photoUrl} alt="Photo preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-500" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-slate-700 cursor-pointer transition-colors shadow-sm">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Choose Photo File</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const MAX_SIZE = 400;
+                                let width = img.width;
+                                let height = img.height;
+                                if (width > height) {
+                                  if (width > MAX_SIZE) {
+                                    height = Math.round(height * (MAX_SIZE / width));
+                                    width = MAX_SIZE;
+                                  }
+                                } else {
+                                  if (height > MAX_SIZE) {
+                                    width = Math.round(width * (MAX_SIZE / height));
+                                    height = MAX_SIZE;
+                                  }
+                                }
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                if (ctx) {
+                                  ctx.drawImage(img, 0, 0, width, height);
+                                  setNewMemberData({ ...newMemberData, photoUrl: canvas.toDataURL('image/jpeg', 0.85) });
+                                } else {
+                                  setNewMemberData({ ...newMemberData, photoUrl: event.target?.result as string });
+                                }
+                              };
+                              img.src = event.target?.result as string;
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <input
+                      type="text"
+                      placeholder="Or paste Image URL..."
+                      value={newMemberData.photoUrl || ''}
+                      onChange={(e) => setNewMemberData({ ...newMemberData, photoUrl: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-white font-mono focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingMember(false)}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all shadow-lg flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Organizer</span>
                 </button>
               </div>
             </form>
@@ -1441,6 +2615,21 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL: Admin Edit & View Ticket Pass */}
+      {editingTicketReg && (
+        <DelegationTicketModal
+          registration={editingTicketReg}
+          events={events}
+          settings={settings}
+          isAdmin={true}
+          onClose={() => setEditingTicketReg(null)}
+          onUpdated={() => {
+            loadAllData();
+            onRefreshConfig();
+          }}
+        />
       )}
     </div>
   );

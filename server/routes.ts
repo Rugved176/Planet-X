@@ -1,10 +1,13 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { 
-  dbManager, 
+  dbManager,
+  firestoreDb, 
   Registration, 
   UserProfile, 
   CompetitionEvent, 
+  OrganizingTeamMember,
   AuditLog, 
   ContactMessage 
 } from './db.ts';
@@ -58,7 +61,8 @@ function recordAudit(adminEmail: string, action: string, details: string) {
 // -------------------------------------------------------------
 
 // Global config, zones, events, team info, settings
-apiRouter.get('/public/config', (_req: Request, res: Response) => {
+apiRouter.get('/public/config', async (_req: Request, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   res.json({
     settings: db.settings,
@@ -68,12 +72,13 @@ apiRouter.get('/public/config', (_req: Request, res: Response) => {
       // Hide whatsapp link if restricted until after confirmation
       whatsappGroupLink: ev.whatsappVisibility === 'after_submission' ? ev.whatsappGroupLink : ''
     })),
-    teamMembers: db.teamMembers.sort((a, b) => a.displayOrder - b.displayOrder)
+    teamMembers: [...db.teamMembers].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
   });
 });
 
 // Single event by slug or id
-apiRouter.get('/events/:slug', (req: Request, res: Response) => {
+apiRouter.get('/events/:slug', async (req: Request, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   const event = db.events.find(e => e.slug === req.params.slug || e.id === req.params.slug);
   if (!event) {
@@ -325,11 +330,11 @@ apiRouter.get('/auth/me', authMiddleware, (req: AuthenticatedRequest, res: Respo
   });
 });
 
-apiRouter.put('/auth/profile', authMiddleware, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.put('/auth/profile', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const user = req.user!;
   const { name, phone, college } = req.body;
 
-  dbManager.update(db => {
+  await dbManager.updateAsync(db => {
     const u = db.users.find(x => x.id === user.id);
     if (u) {
       if (name) u.name = String(name).trim();
@@ -526,7 +531,7 @@ apiRouter.post('/registrations', authMiddleware, async (req: AuthenticatedReques
       submittedAt: new Date().toISOString()
     };
 
-    dbManager.update(d => {
+    await dbManager.updateAsync(d => {
       d.registrations.unshift(newRegistration);
     });
 
@@ -583,7 +588,7 @@ apiRouter.post('/registrations/:id/payment-proof', authMiddleware, upload.single
       return;
     }
 
-    dbManager.update(d => {
+    await dbManager.updateAsync(d => {
       const target = d.registrations.find(r => r.id === regId);
       if (target) {
         if (fileDataUrl) {
@@ -615,7 +620,8 @@ apiRouter.post('/registrations/:id/payment-proof', authMiddleware, upload.single
 // -------------------------------------------------------------
 
 // Admin Overview Analytics
-apiRouter.get('/admin/overview', adminOnlyMiddleware, (_req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/admin/overview', adminOnlyMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   
   const totalRegistrations = db.registrations.length;
@@ -668,7 +674,8 @@ apiRouter.get('/admin/overview', adminOnlyMiddleware, (_req: AuthenticatedReques
 });
 
 // Admin list registrations with filtering
-apiRouter.get('/admin/registrations', adminOnlyMiddleware, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/admin/registrations', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   const { zone, event, paymentStatus, regStatus, search } = req.query;
 
@@ -720,7 +727,7 @@ apiRouter.post('/admin/registrations/:id/payment-review', adminOnlyMiddleware, a
 
   const isApproved = Boolean(approved);
 
-  dbManager.update(d => {
+  await dbManager.updateAsync(d => {
     const r = d.registrations.find(x => x.id === regId);
     if (r) {
       if (isApproved) {
@@ -777,7 +784,7 @@ apiRouter.post('/admin/registrations/:id/status', adminOnlyMiddleware, async (re
     return;
   }
 
-  dbManager.update(d => {
+  await dbManager.updateAsync(d => {
     const r = d.registrations.find(x => x.id === regId);
     if (r) {
       r.registrationStatus = status;
@@ -803,8 +810,126 @@ apiRouter.post('/admin/registrations/:id/status', adminOnlyMiddleware, async (re
   res.json({ success: true, registration: updated });
 });
 
-// Admin update competition settings (rules, team limits, deadlines, fees, WhatsApp link)
-apiRouter.put('/admin/events/:id', adminOnlyMiddleware, (req: AuthenticatedRequest, res: Response) => {
+// Admin full edit registration ticket pass
+apiRouter.put('/admin/registrations/:id', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const admin = req.user!;
+  const regId = req.params.id;
+  const updates = req.body;
+
+  const db = dbManager.get();
+  const target = db.registrations.find(r => r.id === regId);
+  if (!target) {
+    res.status(404).json({ error: 'Registration record not found' });
+    return;
+  }
+
+  await dbManager.updateAsync(d => {
+    const r = d.registrations.find(x => x.id === regId);
+    if (r) {
+      if (updates.teamName !== undefined) r.teamName = String(updates.teamName).trim();
+      if (updates.teamLeaderName !== undefined) r.teamLeaderName = String(updates.teamLeaderName).trim();
+      if (updates.teamLeaderEmail !== undefined) r.teamLeaderEmail = String(updates.teamLeaderEmail).trim().toLowerCase();
+      if (updates.teamLeaderPhone !== undefined) r.teamLeaderPhone = String(updates.teamLeaderPhone).trim();
+      if (updates.college !== undefined) r.college = String(updates.college).trim();
+      if (updates.registrationFee !== undefined) r.registrationFee = Math.max(0, Number(updates.registrationFee) || 0);
+      if (updates.paymentStatus !== undefined) r.paymentStatus = updates.paymentStatus;
+      if (updates.registrationStatus !== undefined) r.registrationStatus = updates.registrationStatus;
+      if (updates.paymentReference !== undefined) r.paymentReference = String(updates.paymentReference).trim();
+      if (updates.rejectionReason !== undefined) r.rejectionReason = String(updates.rejectionReason).trim();
+      
+      if (Array.isArray(updates.teamMembers)) {
+        r.teamMembers = updates.teamMembers.map((m: any) => ({
+          name: String(m.name || '').trim(),
+          email: String(m.email || '').trim().toLowerCase(),
+          phone: String(m.phone || '').trim(),
+          college: String(m.college || r.college || '').trim(),
+          role: String(m.role || 'Member').trim()
+        })).filter((m: any) => Boolean(m.name));
+      }
+    }
+  });
+
+  const updated = dbManager.get().registrations.find(x => x.id === regId)!;
+  const event = db.events.find(e => e.id === updated.eventId);
+
+  recordAudit(admin.email, 'UPDATE_TICKET_PASS', `Updated ticket pass details for registration ${regId} (${updated.teamName})`);
+
+  if (updates.resendTicketEmail) {
+    if (updated.registrationStatus === 'confirmed' && event) {
+      await sendFinalConfirmationEmail(updated, event, event.whatsappGroupLink);
+    } else {
+      await sendSubmissionReceivedEmail(updated);
+    }
+  }
+
+  res.json({
+    success: true,
+    registration: updated,
+    message: `Ticket pass details for ${updated.id} successfully updated and saved!`
+  });
+});
+
+// Admin trigger resend ticket pass email
+apiRouter.post('/admin/registrations/:id/resend-ticket', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const admin = req.user!;
+  const regId = req.params.id;
+
+  const db = dbManager.get();
+  const reg = db.registrations.find(r => r.id === regId);
+  if (!reg) {
+    res.status(404).json({ error: 'Registration record not found' });
+    return;
+  }
+
+  const event = db.events.find(e => e.id === reg.eventId);
+
+  if (reg.registrationStatus === 'confirmed' && event) {
+    await sendFinalConfirmationEmail(reg, event, event.whatsappGroupLink);
+  } else {
+    await sendSubmissionReceivedEmail(reg);
+  }
+
+  recordAudit(admin.email, 'RESEND_TICKET_EMAIL', `Resent ticket pass email to leader (${reg.teamLeaderEmail}) and squad for ${regId}`);
+
+  res.json({
+    success: true,
+    message: `Official ticket pass email sent to ${reg.teamLeaderEmail} and squad members!`
+  });
+});
+
+// Participant trigger resend ticket pass email
+apiRouter.post('/registrations/:id/resend-ticket', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const user = req.user!;
+  const regId = req.params.id;
+
+  const db = dbManager.get();
+  const reg = db.registrations.find(r => r.id === regId);
+  if (!reg) {
+    res.status(404).json({ error: 'Registration record not found' });
+    return;
+  }
+
+  if (reg.userId !== user.id && user.role !== 'admin') {
+    res.status(403).json({ error: 'Unauthorized to resend this ticket' });
+    return;
+  }
+
+  const event = db.events.find(e => e.id === reg.eventId);
+
+  if (reg.registrationStatus === 'confirmed' && event) {
+    await sendFinalConfirmationEmail(reg, event, event.whatsappGroupLink);
+  } else {
+    await sendSubmissionReceivedEmail(reg);
+  }
+
+  res.json({
+    success: true,
+    message: `Official delegation ticket pass email successfully dispatched to ${reg.teamLeaderEmail} and squad members!`
+  });
+});
+
+// Admin update competition settings (all details: name, description, rules, eligibility, judging, zone, limits, deadlines, fees, WhatsApp link)
+apiRouter.put('/admin/events/:id', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const admin = req.user!;
   const eventId = req.params.id;
   const updates = req.body;
@@ -816,35 +941,175 @@ apiRouter.put('/admin/events/:id', adminOnlyMiddleware, (req: AuthenticatedReque
     return;
   }
 
-  dbManager.update(d => {
+  await dbManager.updateAsync(d => {
     const ev = d.events.find(e => e.id === eventId);
     if (ev) {
-      if (updates.name !== undefined) ev.name = updates.name;
+      if (updates.name !== undefined) ev.name = updates.name.trim();
+      if (updates.slug !== undefined) ev.slug = updates.slug.trim().toLowerCase();
       if (updates.shortDescription !== undefined) ev.shortDescription = updates.shortDescription;
       if (updates.fullDescription !== undefined) ev.fullDescription = updates.fullDescription;
+      if (updates.eligibility !== undefined) ev.eligibility = updates.eligibility;
       if (updates.registrationFee !== undefined) ev.registrationFee = Number(updates.registrationFee);
-      if (updates.minTeamSize !== undefined) ev.minTeamSize = Number(updates.minTeamSize);
-      if (updates.maxTeamSize !== undefined) ev.maxTeamSize = Number(updates.maxTeamSize);
+      if (updates.minTeamSize !== undefined) ev.minTeamSize = Math.max(1, Number(updates.minTeamSize));
+      if (updates.maxTeamSize !== undefined) ev.maxTeamSize = Math.max(ev.minTeamSize, Number(updates.maxTeamSize));
       if (updates.registrationDeadline !== undefined) ev.registrationDeadline = updates.registrationDeadline;
       if (updates.isOpen !== undefined) ev.isOpen = Boolean(updates.isOpen);
       if (updates.whatsappGroupLink !== undefined) ev.whatsappGroupLink = updates.whatsappGroupLink;
       if (updates.whatsappVisibility !== undefined) ev.whatsappVisibility = updates.whatsappVisibility;
-      if (Array.isArray(updates.rules)) ev.rules = updates.rules;
-      if (Array.isArray(updates.judgingCriteria)) ev.judgingCriteria = updates.judgingCriteria;
-      if (Array.isArray(updates.objectives)) ev.objectives = updates.objectives;
+      
+      // Update arrays
+      if (Array.isArray(updates.rules)) ev.rules = updates.rules.filter((r: any) => Boolean(r && typeof r === 'string' && r.trim()));
+      if (Array.isArray(updates.judgingCriteria)) ev.judgingCriteria = updates.judgingCriteria.filter((j: any) => Boolean(j && typeof j === 'string' && j.trim()));
+      if (Array.isArray(updates.objectives)) ev.objectives = updates.objectives.filter((o: any) => Boolean(o && typeof o === 'string' && o.trim()));
+      if (Array.isArray(updates.allowedTech)) ev.allowedTech = updates.allowedTech.filter((t: any) => Boolean(t && typeof t === 'string' && t.trim()));
+      if (Array.isArray(updates.customFields)) ev.customFields = updates.customFields;
+
+      // Handle zone reassignment
+      if (updates.zoneId && updates.zoneId !== ev.zoneId) {
+        // Remove from old zone
+        const oldZone = d.zones.find(z => z.id === ev.zoneId);
+        if (oldZone) {
+          oldZone.eventIds = oldZone.eventIds.filter(id => id !== ev.id);
+        }
+        // Add to new zone
+        const newZone = d.zones.find(z => z.id === updates.zoneId);
+        if (newZone) {
+          ev.zoneId = newZone.id;
+          ev.zoneName = newZone.name;
+          if (!newZone.eventIds.includes(ev.id)) {
+            newZone.eventIds.push(ev.id);
+          }
+        }
+      }
     }
   });
 
-  recordAudit(admin.email, 'UPDATE_EVENT', `Updated configuration for event: ${event.name}`);
+  recordAudit(admin.email, 'UPDATE_EVENT', `Updated all parameters for event: ${event.name} (Fee: ₹${updates.registrationFee ?? event.registrationFee})`);
   res.json({ success: true, event: dbManager.get().events.find(e => e.id === eventId) });
 });
 
+// Admin create new competition event
+apiRouter.post('/admin/events', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const admin = req.user!;
+  const {
+    name,
+    zoneId,
+    shortDescription,
+    fullDescription,
+    registrationFee,
+    minTeamSize,
+    maxTeamSize,
+    registrationDeadline,
+    eligibility,
+    rules,
+    judgingCriteria,
+    objectives,
+    allowedTech,
+    whatsappGroupLink,
+    whatsappVisibility
+  } = req.body;
+
+  if (!name || !zoneId) {
+    res.status(400).json({ error: 'Competition name and Zone track are required.' });
+    return;
+  }
+
+  const db = dbManager.get();
+  const targetZone = db.zones.find(z => z.id === zoneId);
+  if (!targetZone) {
+    res.status(400).json({ error: 'Invalid zone track specified.' });
+    return;
+  }
+
+  const generatedSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const newEventId = `ev-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+
+  const newEvent: CompetitionEvent = {
+    id: newEventId,
+    slug: generatedSlug || newEventId,
+    zoneId: targetZone.id,
+    zoneName: targetZone.name,
+    name: name.trim(),
+    shortDescription: shortDescription || 'Competitive showcase at PLANET-X 2026.',
+    fullDescription: fullDescription || 'Participants compete across technical challenges and real-world problem statements.',
+    objectives: Array.isArray(objectives) ? objectives.filter(Boolean) : ['Demonstrate technical excellence and teamwork'],
+    eligibility: eligibility || 'Open to all undergraduate and postgraduate students with valid institution ID.',
+    rules: Array.isArray(rules) ? rules.filter(Boolean) : ['Original work required.', 'Judges decision will be final.'],
+    judgingCriteria: Array.isArray(judgingCriteria) ? judgingCriteria.filter(Boolean) : ['Technical Execution (40%)', 'Innovation (30%)', 'Presentation (30%)'],
+    allowedTech: Array.isArray(allowedTech) ? allowedTech.filter(Boolean) : [],
+    minTeamSize: Math.max(1, Number(minTeamSize) || 1),
+    maxTeamSize: Math.max(Number(minTeamSize) || 1, Number(maxTeamSize) || 2),
+    registrationFee: Number(registrationFee) >= 0 ? Number(registrationFee) : 100,
+    registrationDeadline: registrationDeadline || '2026-11-18T23:59:59',
+    isOpen: true,
+    whatsappGroupLink: whatsappGroupLink || '',
+    whatsappVisibility: whatsappVisibility || 'after_submission'
+  };
+
+  await dbManager.updateAsync(d => {
+    d.events.push(newEvent);
+    const z = d.zones.find(zn => zn.id === targetZone.id);
+    if (z && !z.eventIds.includes(newEventId)) {
+      z.eventIds.push(newEventId);
+    }
+  });
+
+  recordAudit(admin.email, 'CREATE_EVENT', `Created new competition: ${newEvent.name} in ${targetZone.name} (Fee: ₹${newEvent.registrationFee})`);
+  res.status(201).json({ success: true, event: newEvent });
+});
+
+// Admin delete competition event
+apiRouter.delete('/admin/events/:id', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const admin = req.user!;
+  const eventId = req.params.id;
+
+  const db = dbManager.get();
+  const event = db.events.find(e => e.id === eventId);
+  if (!event) {
+    res.status(404).json({ error: 'Event not found.' });
+    return;
+  }
+
+  await dbManager.updateAsync(d => {
+    d.events = d.events.filter(e => e.id !== eventId);
+    d.zones.forEach(z => {
+      z.eventIds = z.eventIds.filter(id => id !== eventId);
+    });
+  });
+
+  recordAudit(admin.email, 'DELETE_EVENT', `Deleted competition: ${event.name} (${eventId})`);
+  res.json({ success: true, message: `Event ${event.name} successfully deleted.` });
+});
+
+// Admin batch update fees for all competitions
+apiRouter.post('/admin/events/batch-fees', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const admin = req.user!;
+  const { feesMap } = req.body; // e.g. { "webathon": 200, "ai-quiz": 100 }
+
+  if (!feesMap || typeof feesMap !== 'object') {
+    res.status(400).json({ error: 'Invalid feesMap provided.' });
+    return;
+  }
+
+  await dbManager.updateAsync(d => {
+    Object.entries(feesMap).forEach(([eventId, newFee]) => {
+      const ev = d.events.find(e => e.id === eventId);
+      if (ev && typeof newFee === 'number' && !isNaN(newFee)) {
+        ev.registrationFee = Math.max(0, newFee);
+      }
+    });
+  });
+
+  recordAudit(admin.email, 'BATCH_UPDATE_FEES', `Batch updated registration fees for ${Object.keys(feesMap).length} competitions`);
+  res.json({ success: true, events: dbManager.get().events });
+});
+
 // Admin update global settings (dates, venue, UPI details, QR code, notification email)
-apiRouter.put('/admin/settings', adminOnlyMiddleware, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.put('/admin/settings', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const admin = req.user!;
   const updates = req.body;
 
-  dbManager.update(d => {
+  await dbManager.updateAsync(d => {
     d.settings = {
       ...d.settings,
       ...updates
@@ -856,7 +1121,7 @@ apiRouter.put('/admin/settings', adminOnlyMiddleware, (req: AuthenticatedRequest
 });
 
 // Admin upload payment QR Code
-apiRouter.post('/admin/upload-qr', adminOnlyMiddleware, upload.single('qrCode'), (req: AuthenticatedRequest, res: Response) => {
+apiRouter.post('/admin/upload-qr', adminOnlyMiddleware, upload.single('qrCode'), async (req: AuthenticatedRequest, res: Response) => {
   const admin = req.user!;
   let qrDataUrl = '';
 
@@ -873,7 +1138,7 @@ apiRouter.post('/admin/upload-qr', adminOnlyMiddleware, upload.single('qrCode'),
     return;
   }
 
-  dbManager.update(d => {
+  await dbManager.updateAsync(d => {
     d.settings.paymentQrCodeUrl = qrDataUrl;
   });
 
@@ -882,40 +1147,97 @@ apiRouter.post('/admin/upload-qr', adminOnlyMiddleware, upload.single('qrCode'),
 });
 
 // Admin update organizing team member
-apiRouter.put('/admin/team/:id', adminOnlyMiddleware, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.put('/admin/team/:id', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const admin = req.user!;
   const memberId = req.params.id;
   const updates = req.body;
 
-  dbManager.update(d => {
+  await dbManager.updateAsync(d => {
     const m = d.teamMembers.find(t => t.id === memberId);
     if (m) {
-      if (updates.name !== undefined) m.name = updates.name;
-      if (updates.role !== undefined) m.role = updates.role;
-      if (updates.bio !== undefined) m.bio = updates.bio;
-      if (updates.photoUrl !== undefined) m.photoUrl = updates.photoUrl;
-      if (updates.socialLink !== undefined) m.socialLink = updates.socialLink;
+      if (updates.name !== undefined) m.name = String(updates.name).trim();
+      if (updates.role !== undefined) m.role = String(updates.role).trim();
+      if (updates.email !== undefined) m.email = String(updates.email).trim();
+      if (updates.phone !== undefined) m.phone = String(updates.phone).trim();
+      if (updates.bio !== undefined) m.bio = String(updates.bio).trim();
+      if (updates.photoUrl !== undefined) m.photoUrl = String(updates.photoUrl).trim();
+      if (updates.socialLink !== undefined) m.socialLink = String(updates.socialLink).trim();
+      if (updates.displayOrder !== undefined) m.displayOrder = Number(updates.displayOrder) || m.displayOrder;
     }
   });
 
-  recordAudit(admin.email, 'UPDATE_TEAM_MEMBER', `Updated profile for member: ${memberId}`);
+  recordAudit(admin.email, 'UPDATE_TEAM_MEMBER', `Updated organizer profile for member: ${memberId}`);
+  res.json({ success: true, teamMembers: dbManager.get().teamMembers });
+});
+
+// Admin add new team member
+apiRouter.post('/admin/team', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const admin = req.user!;
+  const body = req.body;
+
+  if (!body.name || !body.name.trim()) {
+    res.status(400).json({ error: 'Organizer Name is required' });
+    return;
+  }
+
+  const newMember: OrganizingTeamMember = {
+    id: `team-${Date.now()}`,
+    name: String(body.name).trim(),
+    role: body.role ? String(body.role).trim() : 'Event Organizer',
+    email: body.email ? String(body.email).trim() : '',
+    phone: body.phone ? String(body.phone).trim() : '',
+    bio: body.bio ? String(body.bio).trim() : '',
+    photoUrl: body.photoUrl ? String(body.photoUrl).trim() : '',
+    socialLink: body.socialLink ? String(body.socialLink).trim() : 'https://linkedin.com',
+    displayOrder: body.displayOrder ? Number(body.displayOrder) : dbManager.get().teamMembers.length + 1
+  };
+
+  await dbManager.updateAsync(d => {
+    d.teamMembers.push(newMember);
+  });
+
+  recordAudit(admin.email, 'CREATE_TEAM_MEMBER', `Created organizer profile for: ${newMember.name}`);
+  res.json({ success: true, member: newMember, teamMembers: dbManager.get().teamMembers });
+});
+
+// Admin delete team member
+apiRouter.delete('/admin/team/:id', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const admin = req.user!;
+  const memberId = req.params.id;
+
+  await dbManager.updateAsync(d => {
+    d.teamMembers = d.teamMembers.filter(t => t.id !== memberId);
+  });
+
+  if (firestoreDb) {
+    try {
+      await deleteDoc(doc(firestoreDb, 'team_members', memberId));
+    } catch (err) {
+      console.error('Failed to delete team member from Cloud Firestore:', err);
+    }
+  }
+
+  recordAudit(admin.email, 'DELETE_TEAM_MEMBER', `Deleted organizer: ${memberId}`);
   res.json({ success: true, teamMembers: dbManager.get().teamMembers });
 });
 
 // Admin view email outbox
-apiRouter.get('/admin/emails', adminOnlyMiddleware, (_req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/admin/emails', adminOnlyMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   res.json({ emails: db.emailLogs });
 });
 
 // Admin view audit logs
-apiRouter.get('/admin/audit-logs', adminOnlyMiddleware, (_req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/admin/audit-logs', adminOnlyMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   res.json({ auditLogs: db.auditLogs });
 });
 
 // Admin export registrations to CSV
-apiRouter.get('/admin/export-csv', adminOnlyMiddleware, (_req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/admin/export-csv', adminOnlyMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   const rows = [
     [
@@ -970,16 +1292,17 @@ apiRouter.get('/admin/export-csv', adminOnlyMiddleware, (_req: AuthenticatedRequ
 });
 
 // Admin view all participant contact inquiries
-apiRouter.get('/admin/queries', adminOnlyMiddleware, (_req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/admin/queries', adminOnlyMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  await dbManager.syncFromFirestore();
   const db = dbManager.get();
   res.json({ queries: db.contactMessages });
 });
 
 // Admin update query status
-apiRouter.patch('/admin/queries/:id', adminOnlyMiddleware, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.patch('/admin/queries/:id', adminOnlyMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const { status } = req.body;
-  dbManager.update(d => {
+  await dbManager.updateAsync(d => {
     const q = d.contactMessages.find(m => m.id === id);
     if (q && status) {
       q.status = status;

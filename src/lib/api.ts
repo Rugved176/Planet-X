@@ -128,6 +128,11 @@ export const api = {
       body: JSON.stringify({ proofBase64, paymentReference, fileName })
     }),
 
+  resendRegistrationTicket: (registrationId: string) =>
+    request<{ success: boolean; message: string }>(`/api/registrations/${registrationId}/resend-ticket`, {
+      method: 'POST'
+    }),
+
   // Admin
   getAdminOverview: () =>
     request<{
@@ -164,10 +169,38 @@ export const api = {
       body: JSON.stringify({ status, note })
     }),
 
+  updateRegistrationTicketPass: (registrationId: string, updates: any) =>
+    request<{ success: boolean; registration: Registration; message: string }>(`/api/admin/registrations/${registrationId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }),
+
+  resendRegistrationTicketAdmin: (registrationId: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/registrations/${registrationId}/resend-ticket`, {
+      method: 'POST'
+    }),
+
   updateEvent: (eventId: string, updates: Partial<CompetitionEvent>) =>
     request<{ success: boolean; event: CompetitionEvent }>(`/api/admin/events/${eventId}`, {
       method: 'PUT',
       body: JSON.stringify(updates)
+    }),
+
+  createEvent: (data: Partial<CompetitionEvent>) =>
+    request<{ success: boolean; event: CompetitionEvent }>('/api/admin/events', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  deleteEvent: (eventId: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/events/${eventId}`, {
+      method: 'DELETE'
+    }),
+
+  batchUpdateFees: (feesMap: Record<string, number>) =>
+    request<{ success: boolean; events: CompetitionEvent[] }>('/api/admin/events/batch-fees', {
+      method: 'POST',
+      body: JSON.stringify({ feesMap })
     }),
 
   updateGlobalSettings: (updates: Partial<GlobalSettings>) =>
@@ -186,6 +219,17 @@ export const api = {
     request<{ success: boolean; teamMembers: OrganizingTeamMember[] }>(`/api/admin/team/${memberId}`, {
       method: 'PUT',
       body: JSON.stringify(updates)
+    }),
+
+  createTeamMember: (data: Partial<OrganizingTeamMember>) =>
+    request<{ success: boolean; member: OrganizingTeamMember; teamMembers: OrganizingTeamMember[] }>('/api/admin/team', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  deleteTeamMember: (memberId: string) =>
+    request<{ success: boolean; teamMembers: OrganizingTeamMember[] }>(`/api/admin/team/${memberId}`, {
+      method: 'DELETE'
     }),
 
   getAdminEmails: () => request<{ emails: EmailLog[] }>('/api/admin/emails'),

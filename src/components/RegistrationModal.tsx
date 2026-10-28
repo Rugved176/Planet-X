@@ -3,7 +3,9 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { CompetitionEvent, Registration } from '../types.ts';
 import { api } from '../lib/api.ts';
 import confetti from 'canvas-confetti';
-import { X, Plus, Trash2, CheckCircle2, AlertCircle, ArrowRight, Upload, Image as ImageIcon, FileCheck } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle2, AlertCircle, ArrowRight, Upload, Image as ImageIcon, FileCheck, Download, Smartphone } from 'lucide-react';
+import { generateTeamDossierPdf } from '../lib/pdfGenerator.ts';
+import { generateUpiPaymentUrl, generateUpiQrCodeUrl } from '../lib/payment.ts';
 
 interface RegistrationModalProps {
   event: CompetitionEvent;
@@ -177,50 +179,114 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onC
         {completedReg ? (
           /* SUCCESS CONFIRMATION STATE */
           <div className="text-center py-6">
-            <div className="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-4 shadow-[0_0_25px_rgba(6,182,212,0.3)]">
               <CheckCircle2 className="w-9 h-9" />
             </div>
-            <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">REGISTRATION SUCCESSFUL</span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-display text-white mt-1">
+            <span className="text-xs font-mono uppercase tracking-widest text-emerald-400 font-bold">REGISTRATION & PAYMENT LOGGED</span>
+            <h2 className="text-2xl sm:text-3xl font-black font-display text-white mt-1">
               Welcome to {event.name}!
             </h2>
-            <p className="text-sm text-slate-300 mt-2 max-w-md mx-auto">
-              Your registration has been securely logged into the database. A confirmation email has been dispatched.
+            <p className="text-sm text-slate-300 mt-2 max-w-lg mx-auto">
+              Your registration has been securely recorded. An official confirmation email with your ID and full squad details has been sent to <strong className="text-cyan-300">{completedReg.teamLeaderEmail}</strong> from <span className="text-cyan-300 font-mono">planetx.event@gmail.com</span>.
             </p>
 
             {/* Registration ID Banner */}
-            <div className="my-6 p-4 rounded-xl bg-slate-950 border border-cyan-500/30 max-w-md mx-auto">
-              <span className="text-xs text-slate-400 uppercase font-mono block">Your Unique Registration ID</span>
+            <div className="my-5 p-4 rounded-xl bg-slate-950 border border-cyan-500/40 max-w-lg mx-auto shadow-inner">
+              <span className="text-xs text-slate-400 uppercase font-mono tracking-wider block">Your Official Registration ID</span>
               <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-300 tracking-wider">
                 {completedReg.id}
               </span>
+              <span className="text-[11px] text-slate-400 block mt-1">Keep this ID handy for entry and event desk check-in</span>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 max-w-md mx-auto text-left space-y-1.5 mb-6">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Team:</span>
+            {/* Team & Delegation Details Box */}
+            <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 max-w-lg mx-auto text-left space-y-2 mb-4">
+              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                <span className="text-slate-400">Team Name:</span>
                 <span className="font-semibold text-white">{completedReg.teamName}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Total Squad:</span>
-                <span className="font-semibold text-white">{completedReg.teamMembers.length + 1} Members</span>
+              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                <span className="text-slate-400">College / Institute:</span>
+                <span className="font-medium text-slate-200">{completedReg.college || "SVKM's NMIMS Global University"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Fee:</span>
-                <span className="font-semibold text-cyan-300">₹{completedReg.registrationFee}</span>
+              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                <span className="text-slate-400">Team Leader:</span>
+                <span className="font-semibold text-cyan-300">{completedReg.teamLeaderName} ({completedReg.teamLeaderPhone})</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Status:</span>
-                <span className="font-semibold text-amber-300 capitalize">{completedReg.registrationStatus}</span>
+              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                <span className="text-slate-400">Registration Fee:</span>
+                <span className="font-semibold text-emerald-400">₹{completedReg.registrationFee} (Paid)</span>
+              </div>
+              {completedReg.paymentReference && (
+                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                  <span className="text-slate-400">Payment UTR / Ref ID:</span>
+                  <span className="font-mono text-slate-200">{completedReg.paymentReference}</span>
+                </div>
+              )}
+              
+              {/* Full Squad Roster List */}
+              <div className="pt-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block mb-1.5">
+                  Registered Squad Roster ({completedReg.teamMembers.length + 1} Members):
+                </span>
+                <div className="space-y-1.5 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-white font-medium">1. {completedReg.teamLeaderName} <span className="text-cyan-400 text-[10px]">(Leader)</span></span>
+                    <span className="text-slate-400 font-mono">{completedReg.teamLeaderEmail}</span>
+                  </div>
+                  {completedReg.teamMembers.map((m, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-[11px] border-t border-slate-800/40 pt-1">
+                      <span className="text-slate-200">{idx + 2}. {m.name}</span>
+                      <span className="text-slate-400 font-mono">{m.email || m.phone || 'Member'}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all shadow-lg"
-            >
-              Go to Participant Dashboard &rarr;
-            </button>
+            {/* Helpdesk Contacts Note */}
+            <div className="text-[11px] text-slate-400 mb-6 max-w-lg mx-auto bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 text-left">
+              <span className="font-semibold text-slate-300 block mb-1">Committee Helpdesk Contacts:</span>
+              <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-400">
+                <div>Rugved: <a href="tel:+919975952579" className="text-cyan-400 hover:underline">+91 9975952579</a></div>
+                <div>Ved: <a href="tel:+918262058180" className="text-cyan-400 hover:underline">+91 8262058180</a></div>
+                <div>Dakshal: <a href="tel:+918412820178" className="text-cyan-400 hover:underline">+91 8412820178</a></div>
+                <div>Yash: <a href="tel:+918080156469" className="text-cyan-400 hover:underline">+91 8080156469</a></div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={() => {
+                  generateTeamDossierPdf({
+                    id: completedReg.id,
+                    eventId: event.id,
+                    teamName: completedReg.teamName,
+                    leaderName: completedReg.teamLeaderName,
+                    leaderEmail: completedReg.teamLeaderEmail,
+                    leaderPhone: completedReg.teamLeaderPhone,
+                    college: completedReg.college,
+                    members: completedReg.teamMembers,
+                    paymentSlip: completedReg.paymentProofUrl || paymentProofBase64,
+                    utrNumber: completedReg.paymentReference,
+                    amount: completedReg.registrationFee,
+                    status: 'PENDING VERIFICATION'
+                  }, event);
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center gap-2 transition-all"
+              >
+                <Download className="w-4 h-4 text-cyan-400" />
+                Download Entry Dossier (PDF)
+              </button>
+
+              <button
+                onClick={onClose}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition-all shadow-lg flex items-center justify-center gap-1.5"
+              >
+                <span>View Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         ) : (
           /* REGISTRATION FORM */
@@ -428,37 +494,59 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ event, onC
                     </span>
                   </div>
 
-                  {/* QR Code and Account Card */}
-                  <div className="p-4 rounded-xl bg-slate-950/90 border border-amber-500/30 flex flex-col sm:flex-row items-center gap-4">
-                    <div className="shrink-0 text-center">
-                      <img 
-                        src="/assets/aistudio/image_6399a176.png" 
-                        alt="PLANET-X Official UPI QR Code" 
-                        className="w-36 h-36 object-contain rounded-xl border border-slate-700 bg-white p-1 shadow-md shadow-amber-500/10"
-                      />
-                      <span className="text-[10px] text-slate-400 font-mono block mt-1">Scan via any UPI App</span>
-                    </div>
+                  {/* Dynamic Event-Specific UPI QR Code Calculation */}
+                  {(() => {
+                    const upiPaymentUrl = generateUpiPaymentUrl('9975952579@fam', 'Rugved Solanki', event.registrationFee, event.name);
+                    const dynamicQrUrl = generateUpiQrCodeUrl(upiPaymentUrl, 300);
 
-                    <div className="space-y-1.5 text-xs text-left flex-1 w-full">
-                      <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-400">Payee Name:</span>
-                          <span className="font-semibold text-white">Rugved Solanki</span>
+                    return (
+                      <div className="p-4 rounded-xl bg-slate-950/90 border border-amber-500/30 flex flex-col sm:flex-row items-center gap-4">
+                        <div className="shrink-0 text-center">
+                          <img 
+                            src={dynamicQrUrl} 
+                            alt={`PLANET-X UPI QR for ${event.name} (₹${event.registrationFee})`} 
+                            className="w-36 h-36 object-contain rounded-xl border border-cyan-500/40 bg-white p-1 shadow-md shadow-cyan-500/20"
+                          />
+                          <span className="text-[10px] text-cyan-300 font-mono block mt-1 font-semibold">
+                            Amount Locked: ₹{event.registrationFee}
+                          </span>
                         </div>
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-400">UPI ID:</span>
-                          <span className="font-mono font-bold text-cyan-300 select-all">9975952579@fam</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-400">Payable Amount:</span>
-                          <span className="font-mono font-bold text-emerald-400">₹{event.registrationFee}</span>
+
+                        <div className="space-y-2 text-xs text-left flex-1 w-full">
+                          <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-slate-400">Target Competition:</span>
+                              <span className="font-bold text-cyan-300 uppercase">{event.name}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-slate-400">Payee Name:</span>
+                              <span className="font-semibold text-white">Rugved Solanki</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-slate-400">UPI ID:</span>
+                              <span className="font-mono font-bold text-cyan-300 select-all">9975952579@fam</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-slate-400">Exact Payable Amount:</span>
+                              <span className="font-mono font-bold text-emerald-400 text-sm">₹{event.registrationFee}</span>
+                            </div>
+                          </div>
+
+                          <a
+                            href={upiPaymentUrl}
+                            className="w-full px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+                          >
+                            <Smartphone className="w-4 h-4" />
+                            <span>Pay Exact ₹{event.registrationFee} via GPay / PhonePe / Paytm</span>
+                          </a>
+
+                          <p className="text-[10px] text-slate-400 leading-relaxed">
+                            Scanning this QR code automatically pre-fills and locks the exact entry fee (₹{event.registrationFee}) for {event.name}. Neither more nor less can be charged.
+                          </p>
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Pay via Google Pay, PhonePe, Paytm, or BHIM. After payment, take a screenshot of the transaction slip and upload it below with the 12-digit UTR reference.
-                      </p>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Payment Slip Upload & UTR Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -16,7 +16,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<UserProfile>;
-  loginWithGoogle: () => Promise<UserProfile>;
+  loginWithGoogle: () => Promise<UserProfile | null>;
   loginWithGoogleRedirect: () => Promise<void>;
   register: (data: { email: string; password: string; name: string; phone?: string; college?: string }) => Promise<UserProfile>;
   logout: () => void;
@@ -87,11 +87,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.user;
   };
 
-  const loginWithGoogle = async (): Promise<UserProfile> => {
+  const loginWithGoogle = async (): Promise<UserProfile | null> => {
     // CRITICAL: Call signInWithGooglePopup immediately before any state update
     // to preserve the user's synchronous interaction context in browsers!
     const fbUser = await signInWithGooglePopup();
-    if (!fbUser || !fbUser.email) {
+    if (!fbUser) {
+      return null;
+    }
+    if (!fbUser.email) {
       throw new Error('Google sign-in did not provide an email address.');
     }
 

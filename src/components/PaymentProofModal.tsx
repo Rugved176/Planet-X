@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Registration, GlobalSettings } from '../types.ts';
 import { api } from '../lib/api.ts';
-import { X, Upload, CheckCircle2, AlertCircle, Copy, Check } from 'lucide-react';
+import { X, Upload, CheckCircle2, AlertCircle, Copy, Check, Smartphone } from 'lucide-react';
+import { generateUpiPaymentUrl, generateUpiQrCodeUrl } from '../lib/payment.ts';
 
 interface PaymentProofModalProps {
   registration: Registration;
@@ -151,51 +152,60 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
               </div>
             </div>
 
-            {/* Official QR Code Box */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-center">
-              <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider block mb-3">
-                Official Event Payment QR
-              </span>
+            {/* Official Event-Specific Payment QR */}
+            {(() => {
+              const upiId = settings.upiId || '9975952579@fam';
+              const upiPaymentUrl = generateUpiPaymentUrl(upiId, 'Rugved Solanki', registration.registrationFee, registration.eventName);
+              const dynamicQrUrl = generateUpiQrCodeUrl(upiPaymentUrl, 300);
 
-              {settings.paymentQrCodeUrl ? (
-                <div className="max-w-[200px] mx-auto p-3 bg-white rounded-xl shadow-lg">
-                  <img
-                    src={settings.paymentQrCodeUrl}
-                    alt="Official Payment QR"
-                    className="w-full h-auto object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="max-w-xs mx-auto py-8 px-4 rounded-xl bg-slate-900 border border-dashed border-slate-700 text-center">
-                  <span className="text-xs font-mono text-cyan-300 tracking-wider font-semibold block">
-                    PAYMENT QR CODE WILL BE AVAILABLE SOON
+              return (
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-cyan-500/30 text-center space-y-3">
+                  <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider block font-semibold">
+                    Dynamic Payment QR for {registration.eventName}
                   </span>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    The organizing committee is generating the official merchant QR. You can also transfer to the UPI ID below.
+
+                  <div className="max-w-[180px] mx-auto p-2.5 bg-white rounded-xl shadow-lg border border-cyan-500/40">
+                    <img
+                      src={dynamicQrUrl}
+                      alt={`UPI QR Code for ${registration.eventName} (₹${registration.registrationFee})`}
+                      className="w-full h-auto object-contain rounded-lg"
+                    />
+                  </div>
+
+                  <span className="text-xs font-bold font-mono text-emerald-400 block">
+                    Amount Locked: ₹{registration.registrationFee}
+                  </span>
+
+                  <a
+                    href={upiPaymentUrl}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs transition-all shadow-md"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Pay Exact ₹{registration.registrationFee} via UPI App</span>
+                  </a>
+
+                  {/* UPI ID Row */}
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    <span className="text-xs text-slate-400 font-mono">UPI ID:</span>
+                    <code className="text-xs font-mono bg-slate-900 px-2 py-1 rounded text-cyan-300 border border-slate-700">
+                      {upiId}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={handleCopyUpi}
+                      className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                      title="Copy UPI ID"
+                    >
+                      {copiedUpi ? <Check className="w-3.5 h-3.5 text-cyan-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 max-w-sm mx-auto">
+                    Scanning this QR code or clicking the button pre-fills and locks the amount to ₹{registration.registrationFee} for {registration.eventName}.
                   </p>
                 </div>
-              )}
-
-              {/* UPI ID Row */}
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <span className="text-xs text-slate-400 font-mono">UPI ID:</span>
-                <code className="text-xs font-mono bg-slate-900 px-2 py-1 rounded text-cyan-300 border border-slate-700">
-                  {settings.upiId || 'nmimsdhule@upi'}
-                </code>
-                <button
-                  type="button"
-                  onClick={handleCopyUpi}
-                  className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                  title="Copy UPI ID"
-                >
-                  {copiedUpi ? <Check className="w-3.5 h-3.5 text-cyan-400" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-
-              <p className="text-[11px] text-slate-400 mt-2 max-w-sm mx-auto">
-                {settings.paymentInstructions}
-              </p>
-            </div>
+              );
+            })()}
 
             {/* Transaction Reference / UTR Input */}
             <div>

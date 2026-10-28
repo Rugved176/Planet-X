@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { Registration, CompetitionEvent, CompetitionZone, GlobalSettings } from '../types.ts';
 import { api } from '../lib/api.ts';
 import { PaymentProofModal } from '../components/PaymentProofModal.tsx';
+import { DelegationTicketModal } from '../components/DelegationTicketModal.tsx';
 import { 
   User, 
   Mail, 
@@ -459,74 +460,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
       )}
 
-      {/* Delegation Pass Print Modal */}
+      {/* Delegation Pass Ticket Modal */}
       {viewingPass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-lg bg-[#0b1126] border border-cyan-500/30 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100">
-            <div className="text-center border-b border-slate-800 pb-4 mb-4">
-              <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-cyan-400">
-                SVKM'S NMIMS GLOBAL UNIVERSITY, DHULE
-              </span>
-              <h3 className="text-2xl font-black font-display text-white mt-1">
-                PLANET-X 2026 DELEGATION PASS
-              </h3>
-              <p className="text-xs text-slate-400">
-                Official Entry Voucher & Registration Credential
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs mb-4">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Pass / Registration ID:</span>
-                <code className="text-cyan-300 font-mono font-bold">{viewingPass.id}</code>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Competition:</span>
-                <span className="font-semibold text-white">{viewingPass.eventName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Team Name:</span>
-                <span className="font-semibold text-white">{viewingPass.teamName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Leader:</span>
-                <span className="text-white">{viewingPass.teamLeaderName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Institution:</span>
-                <span className="text-white">{viewingPass.college}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Event Date:</span>
-                <span className="text-white">{settings.eventDate} (Provisional)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Status:</span>
-                <span className="font-semibold text-emerald-400 uppercase">{viewingPass.registrationStatus}</span>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 mb-6 text-center">
-              Please present this voucher and your college ID card at the desk check-in at SVKM's NMIMS Dhule.
-            </div>
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setViewingPass(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-colors flex items-center gap-1.5"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Pass</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <DelegationTicketModal
+          registration={viewingPass}
+          events={events}
+          settings={settings}
+          isAdmin={false}
+          onClose={() => setViewingPass(null)}
+          onUpdated={fetchRegistrations}
+        />
       )}
     </div>
   );

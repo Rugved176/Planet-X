@@ -76,10 +76,30 @@ function MainApp() {
 
   useEffect(() => {
     fetchConfig();
+
+    // Auto-refresh config when window gains focus or online
+    const handleFocus = () => {
+      fetchConfig();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleFocus);
+
+    // Optional 45-second background sync poll
+    const intervalId = setInterval(fetchConfig, 45000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleFocus);
+      clearInterval(intervalId);
+    };
   }, []);
 
   const handleNavigate = (page: string, param?: string) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Refresh public config whenever user navigates
+    fetchConfig();
 
     if (page === 'event-detail' && param) {
       setSelectedEventSlug(param);

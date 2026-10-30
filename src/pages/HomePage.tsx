@@ -72,6 +72,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         <div className="relative z-10 w-full h-full flex items-center justify-center">
           <ThreePlanet
+            settings={settings}
+            totalZonesCount={zones.length}
+            totalEventsCount={events.length}
             onExploreZones={() => onNavigate('zones')}
             onEnterPlanetX={() => onNavigate('auth')}
           />

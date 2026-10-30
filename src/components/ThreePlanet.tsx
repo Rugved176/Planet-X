@@ -1,9 +1,13 @@
 import React, { useRef, useMemo, useState, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { GlobalSettings } from '../types.ts';
 
 interface ThreePlanetProps {
   className?: string;
+  settings?: GlobalSettings;
+  totalEventsCount?: number;
+  totalZonesCount?: number;
   onExploreZones?: () => void;
   onEnterPlanetX?: () => void;
 }
@@ -409,6 +413,9 @@ const PlanetScene: React.FC<PlanetSceneProps> = ({ speed }) => {
 
 export const ThreePlanet: React.FC<ThreePlanetProps> = ({
   className = '',
+  settings,
+  totalEventsCount,
+  totalZonesCount,
   onExploreZones,
   onEnterPlanetX
 }) => {
@@ -425,6 +432,15 @@ export const ThreePlanet: React.FC<ThreePlanetProps> = ({
       setWebGlSupported(false);
     }
   }, []);
+
+  const formatPrizePool = (pool?: string) => {
+    if (!pool) return '₹50,000 PRIZE POOL';
+    const clean = pool.trim();
+    if (clean.toUpperCase().includes('PRIZE')) {
+      return clean.toUpperCase();
+    }
+    return `${clean.toUpperCase()} PRIZE POOL`;
+  };
 
   return (
     <div className={`relative w-full overflow-hidden select-none min-h-[580px] md:min-h-[720px] lg:min-h-[820px] flex items-center justify-center ${className}`}>
@@ -451,33 +467,39 @@ export const ThreePlanet: React.FC<ThreePlanetProps> = ({
         )}
       </div>
 
-      {/* Semantic DOM Typography Overlay (Matches Reference Image Pixel-for-Pixel) */}
+      {/* Semantic DOM Typography Overlay */}
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 text-center pointer-events-none pt-12 md:pt-16 pb-20">
         {/* Kicker */}
         <div className="text-[11px] sm:text-xs md:text-sm font-mono tracking-[0.22em] text-[#38bdf8] uppercase mb-2 sm:mb-3 font-semibold drop-shadow-[0_2px_12px_rgba(56,189,248,0.5)]">
-          SVKM'S NMIMS GLOBAL UNIVERSITY, DHULE PRESENTS
+          {settings?.institution ? `${settings.institution.toUpperCase()} PRESENTS` : "SVKM'S NMIMS GLOBAL UNIVERSITY, DHULE PRESENTS"}
         </div>
 
         {/* Main Title: PLANET-X 2026 */}
         <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-[104px] font-black font-display tracking-tight text-white uppercase leading-none drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]">
-          PLANET-X{' '}
-          <span className="bg-gradient-to-r from-[#38bdf8] via-[#a855f7] to-[#e879f9] bg-clip-text text-transparent">
-            2026
-          </span>
+          {settings?.eventName ? (
+            settings.eventName
+          ) : (
+            <>
+              PLANET-X{' '}
+              <span className="bg-gradient-to-r from-[#38bdf8] via-[#a855f7] to-[#e879f9] bg-clip-text text-transparent">
+                2026
+              </span>
+            </>
+          )}
         </h1>
 
         {/* Subtitle */}
         <p className="mt-2 sm:mt-3 md:mt-4 text-base sm:text-xl md:text-2xl font-bold tracking-wider text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
-          BEYOND INNOVATION. BEYOND LIMITS.
+          {settings?.tagline || 'BEYOND INNOVATION. BEYOND LIMITS.'}
         </p>
 
         {/* Metric Bar: 3 ZONES / 8 COMPETITIONS / ₹50,000 PRIZE POOL */}
         <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm md:text-base font-bold tracking-wider uppercase drop-shadow-md">
-          <span className="text-white">3 ZONES</span>
+          <span className="text-white">{totalZonesCount || 3} ZONES</span>
           <span className="text-cyan-400 font-light">/</span>
-          <span className="text-white">8 COMPETITIONS</span>
+          <span className="text-white">{totalEventsCount || 8} COMPETITIONS</span>
           <span className="text-cyan-400 font-light">/</span>
-          <span className="text-cyan-400">₹50,000 PRIZE POOL</span>
+          <span className="text-cyan-400">{formatPrizePool(settings?.prizePool)}</span>
         </div>
       </div>
     </div>

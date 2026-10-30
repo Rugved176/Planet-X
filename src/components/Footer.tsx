@@ -1,16 +1,21 @@
-import React from 'react';
+import { GlobalSettings } from '../types.ts';
 
 interface FooterProps {
   onNavigate: (page: string) => void;
+  settings?: GlobalSettings;
   eventDate?: string;
   isProvisional?: boolean;
 }
 
 export const Footer: React.FC<FooterProps> = ({ 
-  onNavigate, 
-  eventDate = '21 November 2026', 
+  onNavigate,
+  settings,
+  eventDate = '2026-11-21', 
   isProvisional = true 
 }) => {
+  const displayDate = settings?.eventDate || eventDate;
+  const displayProvisional = settings?.isProvisionalDate ?? isProvisional;
+
   return (
     <footer className="w-full bg-[#02040a] border-t border-yellow-500/40 text-slate-300 text-xs mt-12 relative z-50 shadow-[0_-20px_50px_rgba(0,0,0,0.95)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
@@ -18,16 +23,16 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Col 1: Identity */}
           <div className="md:col-span-2 space-y-3">
             <h3 className="text-xl font-black font-display text-white uppercase tracking-tight">
-              PLANET-X 2026
+              {settings?.eventName || 'PLANET-X 2026'}
             </h3>
             <p className="text-slate-300 font-medium text-sm">
-              SVKM's NMIMS Global University, Dhule
+              {settings?.institution || "SVKM's NMIMS Global University, Dhule"}
             </p>
             <p className="text-xs text-slate-400 max-w-md leading-relaxed">
-              BEYOND INNOVATION. BEYOND LIMITS. The premier multi-zone inter-collegiate tech, robotics, debate, and fin-tech arena empowering student builders to shape tomorrow.
+              {settings?.tagline || 'BEYOND INNOVATION. BEYOND LIMITS.'} The premier multi-zone inter-collegiate tech, robotics, debate, and fin-tech arena empowering student builders to shape tomorrow.
             </p>
             <div className="text-xs font-mono text-cyan-400 pt-1">
-              Event Date: {eventDate} {isProvisional ? '— provisional' : ''}
+              Event Date: {displayDate} {displayProvisional ? '— provisional' : ''}
             </div>
           </div>
 
@@ -40,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   onClick={() => onNavigate('home')}
-                  className="hover:text-cyan-300 transition-colors text-left"
+                  className="hover:text-cyan-300 transition-colors text-left cursor-pointer"
                 >
                   Home
                 </button>
@@ -48,7 +53,7 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   onClick={() => onNavigate('zones')}
-                  className="hover:text-cyan-300 transition-colors text-left"
+                  className="hover:text-cyan-300 transition-colors text-left cursor-pointer"
                 >
                   Explore Zones
                 </button>
@@ -56,7 +61,7 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   onClick={() => onNavigate('events')}
-                  className="hover:text-cyan-300 transition-colors text-left"
+                  className="hover:text-cyan-300 transition-colors text-left cursor-pointer"
                 >
                   All Competitions
                 </button>
@@ -64,7 +69,7 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   onClick={() => onNavigate('about')}
-                  className="hover:text-cyan-300 transition-colors text-left"
+                  className="hover:text-cyan-300 transition-colors text-left cursor-pointer"
                 >
                   Organizing Team
                 </button>
@@ -72,7 +77,7 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   onClick={() => onNavigate('contact')}
-                  className="hover:text-cyan-300 transition-colors text-left"
+                  className="hover:text-cyan-300 transition-colors text-left cursor-pointer"
                 >
                   Contact Desk
                 </button>
@@ -86,11 +91,10 @@ export const Footer: React.FC<FooterProps> = ({
               Venue Location
             </h4>
             <address className="not-italic space-y-1.5 text-slate-400 leading-relaxed">
-              <p className="text-slate-200 font-medium">SVKM's NMIMS Dhule Campus</p>
-              <p>Mumbai-Agra Highway</p>
-              <p>Dhule, Maharashtra 424001</p>
-              <a href="mailto:planetx.event@gmail.com" className="pt-2 text-cyan-400 hover:underline hover:text-cyan-300 font-mono block">
-                planetx.event@gmail.com
+              <p className="text-slate-200 font-medium">{settings?.institution || "SVKM's NMIMS Dhule Campus"}</p>
+              <p>{settings?.venue || "Campus, Dhule, Maharashtra"}</p>
+              <a href={`mailto:${settings?.contactEmail || 'planetx.event@gmail.com'}`} className="pt-2 text-cyan-400 hover:underline hover:text-cyan-300 font-mono block">
+                {settings?.contactEmail || 'planetx.event@gmail.com'}
               </a>
             </address>
           </div>
@@ -99,7 +103,7 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-slate-500">
           <p>
-            &copy; {new Date().getFullYear()} PLANET-X 2026 &bull; SVKM's NMIMS Global University, Dhule. All rights reserved.
+            &copy; {new Date().getFullYear()} {settings?.eventName || 'PLANET-X 2026'} &bull; {settings?.institution || "SVKM's NMIMS Global University, Dhule"}. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <span>Fair Play Code</span>

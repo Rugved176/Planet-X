@@ -669,15 +669,46 @@ class DatabaseManager {
         }
       }
 
-      // 4. Pull main state (zones, users, registrations, logs)
+      // 4. Fetch specific registrations collection
+      const regCol = collection(firestoreDb, 'registrations');
+      const regSnap = await getDocs(regCol);
+      if (!regSnap.empty) {
+        const cloudRegs: Registration[] = [];
+        regSnap.forEach(docSnap => {
+          const data = docSnap.data() as Registration;
+          if (data && data.id) {
+            cloudRegs.push(data);
+          }
+        });
+        if (cloudRegs.length > 0) {
+          cloudRegs.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime());
+          this.db.registrations = cloudRegs;
+        }
+      }
+
+      // 5. Fetch specific users collection
+      const usersCol = collection(firestoreDb, 'users');
+      const usersSnap = await getDocs(usersCol);
+      if (!usersSnap.empty) {
+        const cloudUsers: UserProfile[] = [];
+        usersSnap.forEach(docSnap => {
+          const data = docSnap.data() as UserProfile;
+          if (data && data.id) {
+            cloudUsers.push(data);
+          }
+        });
+        if (cloudUsers.length > 0) {
+          this.db.users = cloudUsers;
+        }
+      }
+
+      // 6. Pull main state (zones, emailLogs, auditLogs, contactMessages)
       const docRef = doc(firestoreDb, 'app_state', 'main');
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const cloudData = snap.data() as DatabaseSchema;
         if (cloudData) {
           if (Array.isArray(cloudData.zones) && cloudData.zones.length > 0) this.db.zones = cloudData.zones;
-          if (Array.isArray(cloudData.users)) this.db.users = cloudData.users;
-          if (Array.isArray(cloudData.registrations)) this.db.registrations = cloudData.registrations;
           if (Array.isArray(cloudData.emailLogs)) this.db.emailLogs = cloudData.emailLogs;
           if (Array.isArray(cloudData.auditLogs)) this.db.auditLogs = cloudData.auditLogs;
           if (Array.isArray(cloudData.contactMessages)) this.db.contactMessages = cloudData.contactMessages;
@@ -688,7 +719,7 @@ class DatabaseManager {
 
       this.saveDatabase(this.db);
       this.lastSyncTime = Date.now();
-      console.log('[Firestore] Synchronized state (team_members, events, settings, app_state) from Cloud Firestore!');
+      console.log('[Firestore] Synchronized state (team_members, events, settings, registrations, users, app_state) from Cloud Firestore!');
     } catch (err) {
       console.error('[Firestore] Error pulling from Cloud Firestore:', err);
     } finally {
@@ -769,7 +800,17 @@ class DatabaseManager {
         }
       }
 
-      // 5. Save sanitized app_state/main (trimming paymentProofUrl base64 to prevent >1MB single-document limits)
+      // 5. Save users individually to dedicated users collection
+      if (Array.isArray(this.db.users)) {
+        for (const u of this.db.users) {
+          if (u && u.id) {
+            const uRef = doc(firestoreDb, 'users', u.id);
+            await setDoc(uRef, u, { merge: true });
+          }
+        }
+      }
+
+      // 6. Save sanitized app_state/main (trimming paymentProofUrl base64 to prevent >1MB single-document limits)
       const sanitizedDb: DatabaseSchema = {
         ...this.db,
         registrations: (this.db.registrations || []).map(r => ({
@@ -781,7 +822,7 @@ class DatabaseManager {
       const docRef = doc(firestoreDb, 'app_state', 'main');
       await setDoc(docRef, sanitizedDb);
       this.lastSyncTime = Date.now();
-      console.log('[Firestore] Persisted changes synchronously to Cloud Firestore (events, settings, team_members, app_state)!');
+      console.log('[Firestore] Persisted changes synchronously to Cloud Firestore (events, settings, team_members, registrations, users, app_state)!');
     } catch (err) {
       console.error('[Firestore] Error persisting to Cloud Firestore:', err);
     }

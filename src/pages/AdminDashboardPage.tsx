@@ -1280,46 +1280,121 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           <form onSubmit={handleSaveSettings} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Event Date</label>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Event Name / Edition Title</label>
                 <input
-                  type="date"
-                  value={settings.eventDate}
-                  onChange={(e) => setSettings({ ...settings, eventDate: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"
+                  type="text"
+                  placeholder="PLANET-X 2026"
+                  value={settings.eventName || ''}
+                  onChange={(e) => setSettings({ ...settings, eventName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-cyan-400 focus:outline-none"
                 />
               </div>
-              <div className="flex items-center gap-3 pt-6">
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Host Institution Name</label>
                 <input
-                  type="checkbox"
-                  id="provisionalCheck"
-                  checked={settings.isProvisionalDate}
-                  onChange={(e) => setSettings({ ...settings, isProvisionalDate: e.target.checked })}
-                  className="w-4 h-4 accent-cyan-400"
+                  type="text"
+                  placeholder="SVKM's NMIMS Global University, Dhule"
+                  value={settings.institution || ''}
+                  onChange={(e) => setSettings({ ...settings, institution: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-cyan-400 focus:outline-none"
                 />
-                <label htmlFor="provisionalCheck" className="text-xs text-slate-300">
-                  Mark date as provisional
-                </label>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Total Prize Pool</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-cyan-300 font-bold uppercase mb-1">Total Prize Pool (Grand Hero Metric)</label>
+                <input
+                  type="text"
+                  placeholder="₹50,000"
+                  value={settings.prizePool || ''}
+                  onChange={(e) => setSettings({ ...settings, prizePool: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-cyan-500/60 text-xs text-amber-300 font-bold focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Event Date</label>
+                <input
+                  type="date"
+                  value={settings.eventDate || ''}
+                  onChange={(e) => setSettings({ ...settings, eventDate: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
               <input
-                type="text"
-                value={settings.prizePool}
-                onChange={(e) => setSettings({ ...settings, prizePool: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"
+                type="checkbox"
+                id="provisionalCheck"
+                checked={Boolean(settings.isProvisionalDate)}
+                onChange={(e) => setSettings({ ...settings, isProvisionalDate: e.target.checked })}
+                className="w-4 h-4 accent-cyan-400"
               />
+              <label htmlFor="provisionalCheck" className="text-xs text-slate-300">
+                Mark date as provisional
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Primary Hero Tagline</label>
+                <input
+                  type="text"
+                  placeholder="BEYOND INNOVATION. BEYOND LIMITS."
+                  value={settings.tagline || ''}
+                  onChange={(e) => setSettings({ ...settings, tagline: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Supporting Motto</label>
+                <input
+                  type="text"
+                  placeholder="THINK. CODE. CREATE. COMPETE."
+                  value={settings.supportingTagline || ''}
+                  onChange={(e) => setSettings({ ...settings, supportingTagline: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Venue Address</label>
               <input
                 type="text"
-                value={settings.venue}
+                placeholder="SVKM's NMIMS Global University Campus, Dhule, Maharashtra"
+                value={settings.venue || ''}
                 onChange={(e) => setSettings({ ...settings, venue: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-cyan-400 focus:outline-none"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Official Contact Email</label>
+                <input
+                  type="email"
+                  placeholder="planetx.event@gmail.com"
+                  value={settings.contactEmail || ''}
+                  onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Official Contact Phone</label>
+                <input
+                  type="tel"
+                  placeholder="+91 9975952579"
+                  value={settings.contactPhone || ''}
+                  onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
             </div>
 
             <div className="pt-4 border-t border-slate-800">

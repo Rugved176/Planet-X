@@ -664,8 +664,8 @@ class DatabaseManager {
       const settingsSnap = await getDoc(settingsRef);
       if (settingsSnap.exists()) {
         const cloudSettings = settingsSnap.data() as GlobalSettings;
-        if (cloudSettings && cloudSettings.eventName) {
-          this.db.settings = cloudSettings;
+        if (cloudSettings) {
+          this.db.settings = { ...this.db.settings, ...cloudSettings };
         }
       }
 
@@ -702,12 +702,33 @@ class DatabaseManager {
         }
       }
 
-      // 6. Pull main state (zones, emailLogs, auditLogs, contactMessages)
+      // Guarantee primary admin account planetx.event@gmail.com is ALWAYS present and has role admin
+      const adminUser = this.db.users.find(u => u.email.toLowerCase() === 'planetx.event@gmail.com');
+      if (!adminUser) {
+        this.db.users.push({
+          id: 'usr-admin-planetx',
+          email: 'planetx.event@gmail.com',
+          passwordHash: '$2a$10$325u3L41J/7Pq8B8eH1eue6b/06k7d3/L.o3i9N3x34i7.r6d1v02', // SVKM hash placeholder
+          name: 'PLANET-X Administrator',
+          phone: '+91 9975952579',
+          college: "SVKM's NMIMS Global University, Dhule",
+          role: 'admin',
+          emailVerified: true,
+          createdAt: new Date().toISOString()
+        });
+      } else {
+        adminUser.role = 'admin';
+      }
+
+      // 6. Pull main state (zones, emailLogs, auditLogs, contactMessages, and fallback settings/teamMembers)
       const docRef = doc(firestoreDb, 'app_state', 'main');
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const cloudData = snap.data() as DatabaseSchema;
         if (cloudData) {
+          if (cloudData.settings) {
+            this.db.settings = { ...this.db.settings, ...cloudData.settings };
+          }
           if (Array.isArray(cloudData.zones) && cloudData.zones.length > 0) this.db.zones = cloudData.zones;
           if (Array.isArray(cloudData.emailLogs)) this.db.emailLogs = cloudData.emailLogs;
           if (Array.isArray(cloudData.auditLogs)) this.db.auditLogs = cloudData.auditLogs;
@@ -869,26 +890,10 @@ class DatabaseManager {
           }
         }
 
-        // Ensure teamMembers is initialized and enriched
+        // Ensure teamMembers is initialized
         if (!parsed.teamMembers || !Array.isArray(parsed.teamMembers) || parsed.teamMembers.length === 0) {
           parsed.teamMembers = INITIAL_TEAM_MEMBERS;
           updated = true;
-        } else {
-          parsed.teamMembers = parsed.teamMembers.map((m: OrganizingTeamMember, idx: number) => {
-            const init = INITIAL_TEAM_MEMBERS.find(i => i.id === m.id);
-            const enriched: OrganizingTeamMember = {
-              id: m.id || (init ? init.id : `team-${Date.now()}-${idx}`),
-              name: (m.name && m.name.trim()) ? m.name : (init ? init.name : 'Organizer'),
-              role: (m.role && m.role.trim()) ? m.role : (init ? init.role : 'Event Coordinator'),
-              bio: m.bio !== undefined ? m.bio : (init ? init.bio : ''),
-              photoUrl: m.photoUrl !== undefined ? m.photoUrl : (init ? init.photoUrl : ''),
-              socialLink: m.socialLink || (init ? init.socialLink : 'https://linkedin.com'),
-              phone: m.phone !== undefined ? m.phone : (init ? init.phone : ''),
-              email: m.email !== undefined ? m.email : (init ? init.email : ''),
-              displayOrder: typeof m.displayOrder === 'number' ? m.displayOrder : (init ? init.displayOrder : idx + 1)
-            };
-            return enriched;
-          });
         }
 
         if (!parsed.settings) {

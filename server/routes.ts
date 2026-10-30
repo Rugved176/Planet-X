@@ -209,6 +209,67 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password).trim();
+
+    // Special check for primary official admin
+    if (cleanEmail === 'planetx.event@gmail.com') {
+      const isSvkmPassword = cleanPassword.toUpperCase() === 'SVKM';
+      const existingUser = dbManager.get().users.find(u => u.email === cleanEmail);
+      let matchesHash = false;
+      if (existingUser && existingUser.passwordHash) {
+        matchesHash = await comparePassword(cleanPassword, existingUser.passwordHash);
+      }
+
+      if (isSvkmPassword || matchesHash) {
+        const svkmHash = await hashPassword('SVKM');
+        let adminUser: UserProfile | undefined;
+
+        await dbManager.updateAsync(d => {
+          let u = d.users.find(x => x.email === 'planetx.event@gmail.com');
+          if (u) {
+            u.passwordHash = svkmHash;
+            u.role = 'admin';
+            u.name = 'PLANET-X Administrator';
+            u.phone = u.phone || '+91 9975952579';
+            adminUser = u;
+          } else {
+            adminUser = {
+              id: 'usr-admin-planetx',
+              email: 'planetx.event@gmail.com',
+              passwordHash: svkmHash,
+              name: 'PLANET-X Administrator',
+              phone: '+91 9975952579',
+              college: "SVKM's NMIMS Global University, Dhule",
+              role: 'admin',
+              emailVerified: true,
+              createdAt: new Date().toISOString()
+            };
+            d.users.push(adminUser);
+          }
+        });
+
+        const token = generateToken({
+          userId: adminUser!.id,
+          email: adminUser!.email,
+          role: 'admin'
+        });
+
+        res.json({
+          user: {
+            id: adminUser!.id,
+            email: adminUser!.email,
+            name: adminUser!.name,
+            phone: adminUser!.phone,
+            college: adminUser!.college,
+            role: 'admin',
+            emailVerified: true
+          },
+          token
+        });
+        return;
+      }
+    }
+
     const db = dbManager.get();
     const user = db.users.find(u => u.email === cleanEmail);
 
@@ -217,7 +278,7 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
       return;
     }
 
-    const match = await comparePassword(password, user.passwordHash);
+    const match = await comparePassword(cleanPassword, user.passwordHash);
     if (!match) {
       res.status(401).json({ error: 'Invalid email or password' });
       return;

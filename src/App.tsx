@@ -29,8 +29,8 @@ import { api } from './lib/api.ts';
 const DEFAULT_SETTINGS: GlobalSettings = {
   eventName: 'PLANET-X 2026',
   institution: "SVKM's NMIMS Global University, Dhule",
-  eventDate: '2026-11-21',
-  isProvisionalDate: true,
+  eventDate: '2026-11-23',
+  isProvisionalDate: false,
   venue: "SVKM's NMIMS Global University Campus, Dhule, Maharashtra",
   prizePool: 'INR 50,000',
   tagline: 'BEYOND INNOVATION. BEYOND LIMITS.',

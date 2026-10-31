@@ -63,12 +63,14 @@ function MainApp() {
   const fetchConfig = async () => {
     try {
       const res = await api.getPublicConfig();
-      setSettings(res.settings);
-      setZones(res.zones);
-      setEvents(res.events);
-      setTeamMembers(res.teamMembers);
+      if (res) {
+        if (res.settings) setSettings(res.settings);
+        if (res.zones) setZones(res.zones);
+        if (res.events) setEvents(res.events);
+        if (res.teamMembers) setTeamMembers(res.teamMembers);
+      }
     } catch (err) {
-      console.error('Failed to load public config:', err);
+      console.warn('Public configuration fetch notice (using current state):', err);
     } finally {
       setConfigLoading(false);
     }

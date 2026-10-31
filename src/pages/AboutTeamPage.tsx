@@ -1,60 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { OrganizingTeamMember } from '../types.ts';
-import { Mail, Phone, ExternalLink, Linkedin, Sparkles, Check, Copy } from 'lucide-react';
+import { Mail, Phone, Linkedin } from 'lucide-react';
 
 interface AboutTeamPageProps {
   teamMembers: OrganizingTeamMember[];
 }
 
 export const AboutTeamPage: React.FC<AboutTeamPageProps> = ({ teamMembers }) => {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const categories = [
-    { id: 'all', label: 'All Leadership' },
-    { id: 'Overall Coordinators', label: 'Overall Coordinators' },
-    { id: 'Competitions', label: 'Competitions' },
-    { id: 'Web & Creatives', label: 'Web & Platform' },
-    { id: 'Operations', label: 'Operations & Logistics' },
-    { id: 'Publicity', label: 'PR & Outreach' },
-    { id: 'Finance', label: 'Finance & Sponsors' },
-  ];
-
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  // Map the 6 core organizers to appropriate departments if needed
-  const mappedMembers = teamMembers.map((m) => {
-    let dept = 'Competitions';
-    const roleLower = m.role.toLowerCase();
-    if (roleLower.includes('lead') || roleLower.includes('director')) dept = 'Overall Coordinators';
-    else if (roleLower.includes('platform') || roleLower.includes('web')) dept = 'Web & Creatives';
-    else if (roleLower.includes('logistics') || roleLower.includes('operations')) dept = 'Operations';
-    else if (roleLower.includes('pr') || roleLower.includes('outreach')) dept = 'Publicity';
-    else if (roleLower.includes('finance') || roleLower.includes('sponsor')) dept = 'Finance';
-
-    return {
-      ...m,
-      dept
-    };
-  });
-
-  const filteredMembers = activeCategory === 'all'
-    ? mappedMembers
-    : mappedMembers.filter(m => m.dept === activeCategory);
-
   return (
     <div className="relative min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-black overflow-hidden">
-      {/* Clean Subtle Ambient Glow (No foreign screenshot background images) */}
+      {/* Clean Subtle Ambient Glow */}
       <div className="absolute inset-0 bg-radial from-blue-950/20 via-slate-950/80 to-black pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto z-10">
         {/* Title & Kicker */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <span className="text-xs font-mono uppercase tracking-[0.25em] text-amber-400 block mb-2">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <span className="text-xs font-mono uppercase tracking-[0.25em] text-amber-400 block mb-2 font-bold">
             THE ARCHITECTS OF PLANET-X
           </span>
           <h1 className="text-4xl sm:text-6xl font-black font-display text-white uppercase tracking-wider drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]">
@@ -65,26 +26,9 @@ export const AboutTeamPage: React.FC<AboutTeamPageProps> = ({ teamMembers }) => 
           </p>
         </div>
 
-        {/* Category Pills Selector (As seen at 00:53 in reference video) */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-14 max-w-4xl mx-auto">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-                activeCategory === cat.id
-                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105'
-                  : 'bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-700 hover:text-white'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Cyber-Framed Team Cards Grid (Exact Techfest Layout from 00:54) */}
+        {/* Cyber-Framed Team Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredMembers.map((member) => (
+          {teamMembers.map((member) => (
             <div
               key={member.id}
               className="group relative rounded-2xl bg-gradient-to-b from-[#091538] via-[#060c24] to-[#040614] border-2 border-yellow-500/70 shadow-[0_0_30px_rgba(59,130,246,0.25)] hover:shadow-[0_0_40px_rgba(234,179,8,0.4)] p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2"
